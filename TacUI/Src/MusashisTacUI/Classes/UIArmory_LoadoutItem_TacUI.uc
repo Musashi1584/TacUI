@@ -53,16 +53,7 @@ simulated function PopulateData(optional XComGameState_Item Item)
 	if(Item == None)
 		Item = XComGameState_Item(`XCOMHISTORY.GetGameStateForObjectID(ItemRef.ObjectID));
 
-	Category = ItemTemplate != none ? string(ItemTemplate.ItemCat) : "";
-
-	if (Category == "Weapon")
-	{
-		Category = string(X2WeaponTemplate(ItemTemplate).WeaponCat);
-	}
-	if (Category == "Armor")
-	{
-		Category = string(X2ArmorTemplate(ItemTemplate).ArmorTechCat);
-	}
+	Category = string(class'X2TacUIHelper'.static.GetItemCategory(Item));
 
 	Title = ItemTemplate != none ? ItemTemplate.GetItemFriendlyName(Item.ObjectID) : "";
 

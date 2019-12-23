@@ -32,7 +32,22 @@
     <Content Include="Src\MusashisTacUI\Classes\UIArmory_Loadout_TacUI.uc">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Src\MusashisTacUI\Classes\UIFilterCheckbox.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\MusashisTacUI\Classes\UIFilterPanel.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\MusashisTacUI\Classes\UIItemCategoryFilterPanel.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\MusashisTacUI\Classes\UISimpleContainer.uc">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Src\MusashisTacUI\Classes\X2DownloadableContentInfo_MusashisTacUI.uc" />
+    <Content Include="Src\MusashisTacUI\Classes\X2TacUIHelper.uc">
+      <SubType>Content</SubType>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildLocalExtensionPath)\XCOM2.targets" />
 </Project>
