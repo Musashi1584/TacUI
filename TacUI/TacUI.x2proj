@@ -26,10 +26,16 @@
     <Content Include="Config\XComEngine.ini" />
     <Content Include="Config\XComGame.ini" />
     <Content Include="Localization\MusashisTacUI.int" />
+    <Content Include="Src\MusashisTacUI\Classes\DataStructures_TacUI.uc">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Src\MusashisTacUI\Classes\UIArmory_LoadoutItem_TacUI.uc">
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\MusashisTacUI\Classes\UIArmory_Loadout_TacUI.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\MusashisTacUI\Classes\UIEventHandler.uc">
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\MusashisTacUI\Classes\UIFilterCheckbox.uc">
@@ -41,10 +47,13 @@
     <Content Include="Src\MusashisTacUI\Classes\UIItemCategoryFilterPanel.uc">
       <SubType>Content</SubType>
     </Content>
-    <Content Include="Src\MusashisTacUI\Classes\UISimpleContainer.uc">
+    <Content Include="Src\MusashisTacUI\Classes\UIListPanel.uc">
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\MusashisTacUI\Classes\X2DownloadableContentInfo_MusashisTacUI.uc" />
+    <Content Include="Src\MusashisTacUI\Classes\XComGameState_LoadoutFilter.uc">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Src\MusashisTacUI\Classes\X2TacUIHelper.uc">
       <SubType>Content</SubType>
     </Content>

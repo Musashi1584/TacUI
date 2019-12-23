@@ -33,10 +33,10 @@ class X2DownloadableContentInfo_MusashisTacUI extends X2DownloadableContentInfo;
 /// is contained in a strategy start state. Never add additional history frames inside of InstallNewCampaign, add new state objects to the start state
 /// or directly modify start state objects
 /// </summary>
-//static event InstallNewCampaign(XComGameState StartState)
-//{
-
-//}
+static event InstallNewCampaign(XComGameState StartState)
+{
+	class'XComGameState_LoadoutFilter'.static.CreateLoadoutFilterGameState(StartState);
+}
 
 /// <summary>
 /// Called just before the player launches into a tactical a mission while this DLC / Mod is installed.

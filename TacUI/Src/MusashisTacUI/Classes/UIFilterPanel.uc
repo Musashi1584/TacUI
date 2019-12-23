@@ -3,7 +3,7 @@
 //	Author: Musashi
 //	
 //-----------------------------------------------------------
-class UIFilterPanel extends UISimpleContainer;
+class UIFilterPanel extends UIListPanel;
 
 const FilterHeight = 35;
 const ButtonWidth = 250;
@@ -13,9 +13,10 @@ var private bool bUseRadioButtons;
 
 var private string Title;
 var private float NextY;
-var private array<UIFilterCheckbox> Filters;
+var protected array<UIFilterCheckbox> Filters;
 var private UIButton ToggleAllButton;
-var private UIList FilterList;
+var privatewrite UIEventHandler OnFilterChangedHandler;
+
 
 simulated static function UIFilterPanel CreateFilterPanel(
 	class<UIFilterPanel> ClassIn,
@@ -26,94 +27,33 @@ simulated static function UIFilterPanel CreateFilterPanel(
 {
 	local UIFilterPanel This;
 
-	This = UIFilterPanel(class'UISimpleContainer'.static.CreateSimpleContainer(ClassIn, ParentPanelIn));
-	This.InitFilterPanel(TitleIn, bUseRadioButtonsIn);
-
+	This = UIFilterPanel(class'UIListPanel'.static.CreateListPanel(ClassIn, ParentPanelIn, 'FilterList', TitleIn));
+	This.OnFilterChangedHandler = class'UIEventHandler'.static.CreateHandler();
+	
 	return This;
-}
-
-simulated function InitFilterPanel(string TitleIn, bool bUseRadioButtonsIn)
-{
-	`LOG(default.class @ GetFuncName() @ `ShowVar(TitleIn) @ bUseRadioButtonsIn,, 'TacUI');
-
-	bUseRadioButtonsIn = bUseRadioButtonsIn;
-	Title = TitleIn;
-	
-	NextY = 50 + Padding;
-	
-	//if(bUseRadioButtonsIn) {
-	//	ToggleAllButton = Spawn(class'UIButton', self).InitButton('', "All/None", HandleAllNoneClicked);
-	//	ToggleAllButton.SetSize(ButtonWidth, ButtonHeight);
-	//	ToggleAllButton.SetPosition(Padding + 10, NextY);
-	//	NextY += ButtonHeight + Padding * 2;
-	//}
-
-	FilterList = CreateList(self, name("FilterPanel" $ Title), Title);
-	
-	`LOG(default.class @ GetFuncName() @ `ShowVar(Width) @ `ShowVar(Height),, 'TacUI');
-}
-
-simulated static function UIList CreateList(UIPanel Container, name ListName, string ListTitle)
-{
-	local UIList ReturnList;
-	local UIText Header;
-	
-	ReturnList = Container.Spawn(class'UIList', Container);
-	ReturnList.bStickyHighlight = false;
-	ReturnList.bAutosizeItems = false;
-	ReturnList.bAnimateOnInit = false;
-	ReturnList.bSelectFirstAvailable = false;
-	ReturnList.BGPaddingLeft = 10;
-	ReturnList.BGPaddingTop = 50;
-	ReturnList.BGPaddingRight = 10;
-	
-	//ReturnList.ItemPadding = 5;
-	ReturnList.InitList(ListName, 0, 50, Container.Width, Container.Height, false, true, class'UIUtilities_Controls'.const.MC_X2Background);
-	ReturnList.BG.SetSize(Container.Width, Container.Height);
-
-	// this allows us to send mouse scroll events to the list
-	ReturnList.BG.ProcessMouseEvents(ReturnList.OnChildMouseEvent);
-
-	//Header = Container.Spawn(class'UIX2PanelHeader', Container);
-	//Header.InitPanelHeader('ListHeader', "", ListTitle);
-	//Header.SetX(Padding);
-	//Header.SetHeaderWidth(Container.Width - 5);
-
-	Header = Container.Spawn(class'UIText', Container).InitText('ListHeader');
-	Header.SetPosition(5, 5);
-	Header.SetWidth(Container.Width - 5);
-	Header.SetHtmlText(
-		class'UIUtilities_Text'.static.AddFontInfo(
-			class'UIUtilities_Text'.static.GetColoredText(ListTitle, eUIState_Header, class'UIUtilities_Text'.const.BODY_FONT_SIZE_2D),
-			Container.Screen.bIsIn3D,
-			true,
-			true
-		)
-	);
-
-	return ReturnList;
 }
 
 public function UIFilterCheckbox AddFilter(string FilterLabel, bool bChecked, bool bDisabled = false)
 {
 	local UIFilterCheckbox Checkbox;
 
-	`LOG(default.class @ GetFuncName() @ `ShowVar(FilterLabel) @ `ShowVar(FilterList),, 'TacUI');
+	`LOG(default.class @ GetFuncName() @ `ShowVar(FilterLabel) @ `ShowVar(List),, 'TacUI');
 
 	Checkbox = class'UIFilterCheckbox'.static.CreateCheckbox(
-		FilterList,
+		List,
 		FilterLabel,
 		bChecked,
-
+		bDisabled
 	);
-	//Checkbox.SetPosition(0, NextY);
+
+	Checkbox.OnCheckedChangedHandler.AddHandler(HandleFilterChanged);
 
 	Filters.AddItem(Checkbox);
 
 	NextY += FilterHeight + Padding;
 
 	if(Height < NextY) {
-		FilterList.BG.SetHeight(NextY);
+		List.BG.SetHeight(NextY);
 		//SetHeight(NextY);
 	}
 
@@ -122,8 +62,7 @@ public function UIFilterCheckbox AddFilter(string FilterLabel, bool bChecked, bo
 
 public function ResetFilters()
 {
-	local UIFilterCheckbox Filter;
-	FilterList.ClearItems();
+	List.ClearItems();
 	Filters.Length = 0;
 	NextY = 50 + Padding;
 }
@@ -161,7 +100,6 @@ simulated function Hide()
 
 //======================================================================================================================
 // HANDLERS
-
 private function HandleAllNoneClicked(UIButton Source) {
 	local UIFilterCheckbox ListItem;
 	local bool bChecked;
@@ -179,7 +117,7 @@ private function HandleAllNoneClicked(UIButton Source) {
 		if(!ListItem.Checkbox.bIsDisabled ) ListItem.Checkbox.SetChecked(bChecked);
 	}
 
-	//OnChanged.Dispatch(self);
+	OnFilterChangedHandler.Dispatch(self);
 
 	XComHQPresentationLayer(Movie.Pres).GetCamera().Move( vect(0,0,-10) );
 	XComHQPresentationLayer(Movie.Pres).GetCamera().SetZoom(2);
@@ -187,22 +125,24 @@ private function HandleAllNoneClicked(UIButton Source) {
 
 
 private function HandleFilterChanged(Object Source) {
-	local UIFilterCheckbox ListItem;
+	local UIFilterCheckbox Filter;
 
 	if(bUseRadioButtons)
 	{
 		// uncheck others
-		foreach Filters(ListItem)
+		foreach Filters(Filter)
 		{
-			if(!ListItem.Checkbox.bIsDisabled && ListItem.Checkbox != Source)
+			if(!Filter.Checkbox.bIsDisabled && Filter!=Source)
 			{
-				ListItem.Checkbox.SetChecked(false, false);
+				Filter.Checkbox.SetChecked(false, false);
 			}
 		}
 		// check clicked
 		UIFilterCheckbox(Source).Checkbox.SetChecked(true, false);
 	}
 
-	//OnChanged.Dispatch(self);
+	`LOG(default.class @ GetFuncName() @ `ShowVar(UIFilterCheckbox(Source).Checkbox.bChecked) @ `ShowVar(OnFilterChangedHandler),, 'TacUI');
+
+	OnFilterChangedHandler.Dispatch(self);
 }
 
