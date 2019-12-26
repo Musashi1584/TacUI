@@ -92,6 +92,7 @@ defaultproperties
 {
 	//width = 313;
 	//height = 38;
-	LibID = "X2MechaListItem";
-	bCascadeFocus = false;
+	bAnimateOnInit = false
+	LibID = "X2MechaListItem"
+	bCascadeFocus = false
 }

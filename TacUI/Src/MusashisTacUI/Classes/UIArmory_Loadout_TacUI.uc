@@ -19,6 +19,8 @@ var EInventorySlot SelectedSlot;
 var array<TUILockerItemTacUI> LockerItems;
 var array<name> ActiveItemCategories;
 var UIItemCategoryFilterPanel ItemCategoryFilterPanel;
+var array<UIArmory_LoadoutItem_TacUI> LoadoutItems;
+//var UIBufferedList LockerList;
 
 simulated function InitArmory(StateObjectReference UnitRef, optional name DispEvent, optional name SoldSpawnEvent, optional name NavBackEvent, optional name HideEvent, optional name RemoveEvent, optional bool bInstant = false, optional XComGameState InitCheckGameState)
 {
@@ -49,11 +51,15 @@ simulated function ChangeActiveList(UIList kActiveList, optional bool bSkipAnima
 		ReleaseAllPawns();
 		CreateSoldierPawn();
 		ItemCategoryFilterPanel.Hide();
+		LockerList.DisableNavigation();
 	}
 	else
 	{
 		ReleaseAllPawns();
 		ItemCategoryFilterPanel.Show();
+		LockerList.SetSelectedIndex(0, true);
+		LockerList.EnableNavigation();
+		LockerList.Navigator.SelectFirstAvailable();
 	}
 
 
@@ -63,6 +69,14 @@ simulated function ChangeActiveList(UIList kActiveList, optional bool bSkipAnima
 	super.ChangeActiveList(kActiveList, bSkipAnimation);
 }
 
+simulated function TacUIFilters GetFilterState()
+{
+	local XComGameState_LoadoutFilter LoadoutFilterGameState;
+
+	LoadoutFilterGameState = class'XComGameState_LoadoutFilter'.static.GetLoadoutFilterGameState();
+	return LoadoutFilterGameState.GetFilter(UnitReference.ObjectID);
+}
+
 simulated function UpdateLockerList()
 {
 	local XComGameState_Item Item;
@@ -70,7 +84,11 @@ simulated function UpdateLockerList()
 	local TUILockerItemTacUI LockerItem;
 	local array<StateObjectReference> Inventory;
 	local int Index;
+	local TacUIFilters FilterState;
+	local UIArmory_LoadoutItem_TacUI LoadoutItem;
 	
+	`LOG(default.class @ GetFuncName() @ "Start",, 'TacUI');
+
 	EquippedList.width = 538;
 
 	SelectedSlot = GetSelectedSlot();
@@ -85,9 +103,19 @@ simulated function UpdateLockerList()
 	LockerItems.Length = 0;
 	ActiveItemCategories.Length = 0;
 
+	FilterState = GetFilterState();
+
+	`LOG(default.class @ GetFuncName() @ "Gather Data Start",, 'TacUI');
+
 	foreach Inventory(ItemRef)
 	{
 		Item = GetItemFromHistory(ItemRef.ObjectID);
+
+		if (Item == none)
+		{
+			continue;
+		}
+
 		if(ShowInLockerList(Item, SelectedSlot))
 		{
 			LockerItem.Item = Item;
@@ -96,12 +124,13 @@ simulated function UpdateLockerList()
 			LockerItem.ItemCategory = class'X2TacUIHelper'.static.GetItemCategory(Item);
 			if (LockerItem.CanBeEquipped)
 			{
-				LockerItems.AddItem(LockerItem);
-				
+				// Collect all categories
 				if (ActiveItemCategories.Find(LockerItem.ItemCategory) == INDEX_NONE)
 				{
 					ActiveItemCategories.AddItem(LockerItem.ItemCategory);
 				}
+
+				LockerItems.AddItem(LockerItem);
 			}
 		}
 	}
@@ -109,21 +138,57 @@ simulated function UpdateLockerList()
 	ItemCategoryFilterPanel.ResetFilters();
 	ItemCategoryFilterPanel.AddFilters(ActiveItemCategories);
 
-	LockerList.ClearItems();
+	//LockerList.ClearItems();
 
 	LockerItems.Sort(SortLockerListByUpgradesTacUI);
 	LockerItems.Sort(SortLockerListByTierTacUI);
 	LockerItems.Sort(SortLockerListByEquipTacUI);
 
-	foreach LockerItems(LockerItem, Index)
-	{
-		if (Index <= 40)
-		{
-			UIArmory_LoadoutItem_TacUI(LockerList.CreateItem(class'UIArmory_LoadoutItem_TacUI')).InitLoadoutItem(LockerItem.Item, SelectedSlot, false, LockerItem.DisabledReason);
-		}
-	}
+	`LOG(default.class @ GetFuncName() @ "Gather Data End",, 'TacUI');
+	// Dont clear the list for perfomance reasons, just hide the items
+	if (LockerList.GetItemCount() > 0)
+		HideAllLoadoutItems();
 
-	SetTimer(0.1f, false, nameof(LazyLoadAll));
+	//for (Index = LockerItems.Length - 1; Index >= 0; Index--)
+	`LOG(default.class @ GetFuncName() @ "Update UI Items Start",, 'TacUI');
+	for (Index = 0; Index < LockerItems.Length; Index++)
+	{
+		LockerItem = LockerItems[Index];
+
+		if (FilterState.CategoryFilters.Length > 0 &&
+			FilterState.CategoryFilters.Find(LockerItem.ItemCategory) == INDEX_NONE)
+		{
+			continue;
+		}
+
+		LoadoutItem = FindItemById(LockerItem.Item.ObjectID);
+
+		if (LoadoutItem != none)
+		{
+			LoadoutItem.Show();
+			LoadoutItem.PopulateData(LockerItem.Item);
+		}
+		else
+		{
+			LoadoutItem = UIArmory_LoadoutItem_TacUI(LockerList.CreateItem(class'UIArmory_LoadoutItem_TacUI'));
+			LoadoutItem.InitLoadoutItem
+			(
+				LockerItem.Item,
+				SelectedSlot,
+				false,
+				LockerItem.DisabledReason
+			);
+		}
+		//LockerList.MoveItemToTop(LoadoutItem);
+	}
+	RealizeItems();
+	LockerList.RealizeList();
+	`LOG(default.class @ GetFuncName() @ "Update UI Items End",, 'TacUI');
+
+	
+	//LockerList.RealizeList();
+
+	//SetTimer(0.1f, false, nameof(LazyLoadAll));
 
 	// If we have an invalid SelectedIndex, just try and select the first thing that we can.
 	// Otherwise let's make sure the Navigator is selecting the right thing.
@@ -134,6 +199,81 @@ simulated function UpdateLockerList()
 		LockerList.Navigator.SetSelected(LockerList.GetSelectedItem());
 	}
 	OnSelectionChanged(ActiveList, ActiveList.SelectedIndex);
+}
+
+simulated function RealizeItems(optional int StartingIndex)
+{
+	local int i;
+	local float NextItemPosition;
+	local UIPanel Item;
+
+	if(StartingIndex > 0)
+	{
+		Item = LockerList.GetItem(StartingIndex - 1);
+		if (Item != none && Item.bIsVisible)
+		{
+			if (LockerList.bIsHorizontal)
+				NextItemPosition = Item.X + Item.Width + LockerList.ItemPadding;
+			else
+				NextItemPosition = Item.Y + Item.Height + LockerList.ItemPadding;
+		}
+	}
+
+	for(i = StartingIndex; i < LockerList.ItemCount; ++i)
+	{
+		Item = LockerList.GetItem(i);
+		if (Item != none && Item.bIsVisible)
+		{
+			if (LockerList.bIsHorizontal)
+			{
+				Item.SetX(NextItemPosition);
+				NextItemPosition += Item.Width + (i < LockerList.ItemCount - 1) ? LockerList.ItemPadding : 0;
+			}
+			else
+			{
+				Item.SetY(NextItemPosition);
+				NextItemPosition += Item.Height + (i < LockerList.ItemCount - 1) ? LockerList.ItemPadding : 0;
+			}
+		}
+	}
+
+	LockerList.TotalItemSize = NextItemPosition + LockerList.ItemWidthBuffer;
+}
+
+simulated function UIArmory_LoadoutItem_TacUI FindItemById(int ObjectID)
+{
+	local UIArmory_LoadoutItem_TacUI LoadoutItem;
+	local int Index;
+
+	for(Index = 0; Index < LockerList.GetItemCount(); ++ Index)
+	{
+		LoadoutItem = UIArmory_LoadoutItem_TacUI(LockerList.ItemContainer.ChildPanels[Index]);
+		if(LoadoutItem != none && LoadoutItem.ItemRef.ObjectID == ObjectID)
+		{
+			return LoadoutItem;
+		}
+	}
+	return none;
+}
+
+simulated function HideAllLoadoutItems()
+{
+	local UIArmory_LoadoutItem_TacUI LoadoutItem;
+	local int Index;
+
+	`LOG(default.class @ GetFuncName() @ "Start",, 'TacUI');
+	for(Index = 0; Index < LockerList.GetItemCount(); ++ Index)
+	{
+		LoadoutItem = UIArmory_LoadoutItem_TacUI(LockerList.ItemContainer.ChildPanels[Index]);
+		if(LoadoutItem != none)
+		{
+			LoadoutItem.Hide();
+			//LoadoutItem.SetHeight(0);
+		}
+	}
+	`LOG(default.class @ GetFuncName() @ "End",, 'TacUI');
+	//LockerList.RealizeItems();
+	//LockerList.RealizeList();
 }
 
 simulated function LazyLoadAll()
@@ -676,4 +816,9 @@ simulated function int SortLockerListByUpgradesTacUI(TUILockerItemTacUI A, TUILo
 	{
 		return 0;
 	}
+}
+
+defaultproperties
+{
+	//LibID = "LoadoutScreenMC";
 }

@@ -15,18 +15,18 @@ class X2DownloadableContentInfo_MusashisTacUI extends X2DownloadableContentInfo;
 /// DLC / Mod to perform custom processing in response. This will only be called once the first time a player loads a save that was
 /// create without the content installed. Subsequent saves will record that the content was installed.
 /// </summary>
-//static event OnLoadedSavedGame()
-//{
-
-//}
+static event OnLoadedSavedGame()
+{
+	InitializeLoadoutFilterGameState();
+}
 
 /// <summary>
 /// This method is run when the player loads a saved game directly into Strategy while this DLC is installed
 /// </summary>
-//static event OnLoadedSavedGameToStrategy()
-//{
-
-//}
+static event OnLoadedSavedGameToStrategy()
+{
+	InitializeLoadoutFilterGameState();
+}
 
 /// <summary>
 /// Called when the player starts a new campaign while this DLC / Mod is installed. When a new campaign is started the initial state of the world
@@ -38,6 +38,25 @@ static event InstallNewCampaign(XComGameState StartState)
 	class'XComGameState_LoadoutFilter'.static.CreateLoadoutFilterGameState(StartState);
 }
 
+static function InitializeLoadoutFilterGameState()
+{
+
+	local XComGameStateHistory History;
+	local XComGameState NewGameState;
+
+	History = `XCOMHISTORY;
+	NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("Create Loadout Filter State");
+	class'XComGameState_LoadoutFilter'.static.CreateLoadoutFilterGameState(NewGameState);
+	
+	if (NewGameState.GetNumGameStateObjects() > 0)
+	{
+		History.AddGameStateToHistory(NewGameState);
+	}
+	else
+	{
+		History.CleanupPendingGameState(NewGameState);
+	}
+}
 /// <summary>
 /// Called just before the player launches into a tactical a mission while this DLC / Mod is installed.
 /// Allows dlcs/mods to modify the start state before launching into the mission

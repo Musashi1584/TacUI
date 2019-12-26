@@ -21,7 +21,6 @@ public static function CreateLoadoutFilterGameState(out XComGameState NewGameSta
 	if (LoadoutFilterGameState == none || LoadoutFilterGameState.ObjectID == 0)
 	{
 		LoadoutFilterGameState = XComGameState_LoadoutFilter(NewGameState.CreateNewStateObject(class'XComGameState_LoadoutFilter'));
-		NewGameState.AddStateObject(LoadoutFilterGameState);
 	}
 }
 

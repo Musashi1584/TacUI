@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # XCOM ModBuddy Solution File, Format Version 11.00
 VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{5DAE07AF-E217-45C1-8DE7-FF99D6011E8A}") = "TacUI", "TacUI\TacUI.x2proj", "{E36FB0AF-12AD-48D2-8015-9CCFB811F724}"
+Project("{5DAE07AF-E217-45C1-8DE7-FF99D6011E8A}") = "TacUI", "TacUI\TacUI.x2proj", "{A0652E83-6DC4-4F1B-8886-42B510332739}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,10 +11,10 @@ Global
 		Default|XCOM 2 = Default|XCOM 2
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{E36FB0AF-12AD-48D2-8015-9CCFB811F724}.Debug|XCOM 2.ActiveCfg = Debug|XCOM 2
-		{E36FB0AF-12AD-48D2-8015-9CCFB811F724}.Debug|XCOM 2.Build.0 = Debug|XCOM 2
-		{E36FB0AF-12AD-48D2-8015-9CCFB811F724}.Default|XCOM 2.ActiveCfg = Default|XCOM 2
-		{E36FB0AF-12AD-48D2-8015-9CCFB811F724}.Default|XCOM 2.Build.0 = Default|XCOM 2
+		{A0652E83-6DC4-4F1B-8886-42B510332739}.Debug|XCOM 2.ActiveCfg = Debug|XCOM 2
+		{A0652E83-6DC4-4F1B-8886-42B510332739}.Debug|XCOM 2.Build.0 = Debug|XCOM 2
+		{A0652E83-6DC4-4F1B-8886-42B510332739}.Default|XCOM 2.ActiveCfg = Default|XCOM 2
+		{A0652E83-6DC4-4F1B-8886-42B510332739}.Default|XCOM 2.Build.0 = Default|XCOM 2
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
