@@ -5,15 +5,13 @@
 //-----------------------------------------------------------
 class UIFilterPanel extends UIListPanel;
 
-const FilterHeight = 35;
 const ButtonWidth = 250;
 const ButtonHeight = 40;
 
 var private bool bUseRadioButtons;
 
 var private string Title;
-var private float NextY;
-var protected array<UIFilterCheckbox> Filters;
+//var protected array<UIFilterCheckbox> Filters;
 var private UIButton ToggleAllButton;
 var privatewrite UIEventHandler OnFilterChangedHandler;
 
@@ -33,7 +31,7 @@ simulated static function UIFilterPanel CreateFilterPanel(
 	return This;
 }
 
-public function UIFilterCheckbox AddFilter(string FilterLabel, bool bChecked, bool bDisabled = false)
+public function UIFilterCheckbox AddFilter(string FilterLabel, EInventorySlot InventorySlotIn, bool bChecked, bool bDisabled = false)
 {
 	local UIFilterCheckbox Checkbox;
 
@@ -48,14 +46,14 @@ public function UIFilterCheckbox AddFilter(string FilterLabel, bool bChecked, bo
 
 	Checkbox.OnCheckedChangedHandler.AddHandler(HandleFilterChanged);
 
-	Filters.AddItem(Checkbox);
+	//Filters.AddItem(Checkbox);
 
-	NextY += FilterHeight + Padding;
-
-	if(Height < NextY) {
-		List.BG.SetHeight(NextY);
-		//SetHeight(NextY);
-	}
+	//NextY += FilterHeight + Padding;
+	//
+	//if(Height < NextY) {
+	//	List.BG.SetHeight(NextY);
+	//	//SetHeight(NextY);
+	//}
 
 	return Checkbox;
 }
@@ -63,76 +61,112 @@ public function UIFilterCheckbox AddFilter(string FilterLabel, bool bChecked, bo
 public function ResetFilters()
 {
 	List.ClearItems();
-	Filters.Length = 0;
-	NextY = 50 + Padding;
+	//Filters.Length = 0;
+	//NextY = 50 + Padding;
 }
 
-simulated function Show()
+
+simulated function RemoveUnusedFilters(array<name> FilterNames)
 {
 	local UIFilterCheckbox Filter;
+	local int Index, ItemCount;
 
-	if(!bIsVisible)
+	ItemCount = List.GetItemCount();
+
+	for (Index = ItemCount - 1; Index >= 0; Index--)
 	{
-		foreach Filters(Filter)
+		Filter = UIFilterCheckbox(List.GetItem(Index));
+		if (FilterNames.Find(Filter.MCName) == INDEX_NONE)
 		{
-			Filter.Show();
+			List.ItemContainer.RemoveChild(Filter);
 		}
-		ToggleAllButton.Show();
-		super.Show();
 	}
 }
 
-simulated function Hide()
+simulated function UIFilterCheckbox GetFilter(name FilterName)
 {
 	local UIFilterCheckbox Filter;
+	local int Index;
 
-	if(bIsVisible)
+	for (Index = 0; Index < List.GetItemCount(); Index++)
 	{
-		foreach Filters(Filter)
+		Filter = UIFilterCheckbox(List.GetItem(Index));
+		if (Filter.MCName == FilterName)
 		{
-			Filter.Hide();
+			return Filter;
 		}
-		ToggleAllButton.Hide();
-		super.Hide();
 	}
+	return none;
 }
+
+//simulated function Show()
+//{
+//	//local UIFilterCheckbox Filter;
+//
+//	if(!bIsVisible)
+//	{
+//		//foreach Filters(Filter)
+//		//{
+//		//	Filter.Show();
+//		//}
+//		//ToggleAllButton.Show();
+//		super.Show();
+//	}
+//}
+//
+//simulated function Hide()
+//{
+//	//local UIFilterCheckbox Filter;
+//
+//	if(bIsVisible)
+//	{
+//		//foreach Filters(Filter)
+//		//{
+//		//	Filter.Hide();
+//		//}
+//		//ToggleAllButton.Hide();
+//		super.Hide();
+//	}
+//}
 
 
 //======================================================================================================================
 // HANDLERS
-private function HandleAllNoneClicked(UIButton Source) {
-	local UIFilterCheckbox ListItem;
-	local bool bChecked;
-
-	// check all if at least one filter is unchecked ; uncheck all otherwise
-
-	bChecked = false;
-	foreach Filters(ListItem)
-	{
-		if(!ListItem.Checkbox.bIsDisabled && !ListItem.Checkbox.bChecked) bChecked = true;
-	}
-
-	foreach Filters(ListItem)
-	{
-		if(!ListItem.Checkbox.bIsDisabled ) ListItem.Checkbox.SetChecked(bChecked);
-	}
-
-	OnFilterChangedHandler.Dispatch(self);
-
-	XComHQPresentationLayer(Movie.Pres).GetCamera().Move( vect(0,0,-10) );
-	XComHQPresentationLayer(Movie.Pres).GetCamera().SetZoom(2);
-}
+//private function HandleAllNoneClicked(UIButton Source) {
+//	local UIFilterCheckbox ListItem;
+//	local bool bChecked;
+//
+//	// check all if at least one filter is unchecked ; uncheck all otherwise
+//
+//	bChecked = false;
+//	foreach Filters(ListItem)
+//	{
+//		if(!ListItem.Checkbox.bIsDisabled && !ListItem.Checkbox.bChecked) bChecked = true;
+//	}
+//
+//	foreach Filters(ListItem)
+//	{
+//		if(!ListItem.Checkbox.bIsDisabled ) ListItem.Checkbox.SetChecked(bChecked);
+//	}
+//
+//	OnFilterChangedHandler.Dispatch(self);
+//
+//	XComHQPresentationLayer(Movie.Pres).GetCamera().Move( vect(0,0,-10) );
+//	XComHQPresentationLayer(Movie.Pres).GetCamera().SetZoom(2);
+//}
 
 
 private function HandleFilterChanged(Object Source) {
 	local UIFilterCheckbox Filter;
+	local int Index;
 
 	if(bUseRadioButtons)
 	{
 		// uncheck others
-		foreach Filters(Filter)
+		for (Index = 0; Index < List.ItemCount; Index++)
 		{
-			if(!Filter.Checkbox.bIsDisabled && Filter!=Source)
+			Filter = UIFilterCheckbox(List.GetItem(Index));
+			if(!Filter.Checkbox.bIsDisabled && Filter != Source)
 			{
 				Filter.Checkbox.SetChecked(false, false);
 			}

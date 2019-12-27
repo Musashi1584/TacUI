@@ -5,6 +5,8 @@
 //-----------------------------------------------------------
 class UIItemCategoryFilterPanel extends UIFilterPanel;
 
+var protected EInventorySlot InventorySlot;
+
 simulated static function UIItemCategoryFilterPanel CreateItemCategoryFilterPanel(
 	UiPanel ParentPanelIn
 )
@@ -23,30 +25,47 @@ simulated static function UIItemCategoryFilterPanel CreateItemCategoryFilterPane
 	return This;
 }
 
-simulated function AddFilters(array<name> FilterNames)
+simulated function AddFilters(array<name> FilterNames, EInventorySlot InventorySlotIn)
 {
 	local XComGameState_LoadoutFilter LoadoutFilterGameState;
-	local name LocalFilter;
+	local name FilterName;
 	local int UnitStateObjectID;
 	local TacUIFilters FilterState;
+	local UIFilterCheckbox Filter;
+	local bool bChecked;
 
+	InventorySlot = InventorySlotIn;
 	UnitStateObjectID = GetUnitObjectIDFromArmory();
 	LoadoutFilterGameState = class'XComGameState_LoadoutFilter'.static.GetLoadoutFilterGameState();
 
 	if (LoadoutFilterGameState != none && UnitStateObjectID > 0)
 	{
-		FilterState = LoadoutFilterGameState.GetFilter(UnitStateObjectID);
+		FilterState = LoadoutFilterGameState.GetFilter(UnitStateObjectID, InventorySlot);
 	}
 
-	foreach FilterNames(LocalFilter)
+	//RemoveUnusedFilters(FilterNames);
+	ResetFilters();
+	foreach FilterNames(FilterName)
 	{
-		AddFilter(
-			string(LocalFilter),
-			FilterState.CategoryFilters.Find(LocalFilter) != INDEX_NONE,
-			false
-		);
+		Filter = GetFilter(FilterName);
+		bChecked = FilterState.CategoryFilters.Find(FilterName) != INDEX_NONE;
+
+		if (Filter == none)
+		{
+			AddFilter(
+				string(FilterName),
+				InventorySlot,
+				bChecked,
+				false
+			);
+		}
+		else
+		{
+			Filter.Checkbox.SetChecked(bChecked);
+		}
 	}
 }
+
 
 simulated function OnFilterChanged(object Source)
 {
@@ -56,15 +75,17 @@ simulated function OnFilterChanged(object Source)
 	local array<name> ActiveFilters;
 	local XComGameState NewGameState;
 	local int UnitStateObjectID;
+	local int Index;
 
 	LoadoutFilterGameState = class'XComGameState_LoadoutFilter'.static.GetLoadoutFilterGameState();
 
-	foreach Filters(Filter)
+	for (Index = 0; Index < List.GetItemCount(); Index++)
 	{
+		Filter = UIFilterCheckbox(List.GetItem(Index));
 		`LOG(default.class @ GetFuncName() @ `ShowVar(Filter.Checkbox.MCName) @ `ShowVar(Filter.Checkbox.bChecked),, 'TacUI');
 		if (Filter.Checkbox.bChecked)
 		{
-			ActiveFilters.AddItem(Filter.Checkbox.MCName);
+			ActiveFilters.AddItem(Filter.MCName);
 		}
 	}
 
@@ -76,6 +97,7 @@ simulated function OnFilterChanged(object Source)
 			NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("Update Loadout Filter State");
 			LoadoutFilterGameState = XComGameState_LoadoutFilter(NewGameState.ModifyStateObject(LoadoutFilterGameState.Class, LoadoutFilterGameState.ObjectID));
 			FilterState.UnitStateObjectID = UnitStateObjectID;
+			FilterState.InventorySlot = InventorySlot;
 			FilterState.CategoryFilters = ActiveFilters;
 			LoadoutFilterGameState.AddFilter(FilterState);
 			`XCOMHISTORY.AddGameStateToHistory(NewGameState);
@@ -119,5 +141,6 @@ simulated public function int GetUnitObjectIDFromArmory()
 defaultProperties
 {
 	Width = 200
-	Height = 230
+	Height = 600
+	bShrinkToFit = true
 }

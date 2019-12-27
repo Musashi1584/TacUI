@@ -20,13 +20,16 @@ var array<TUILockerItemTacUI> LockerItems;
 var array<name> ActiveItemCategories;
 var UIItemCategoryFilterPanel ItemCategoryFilterPanel;
 var array<UIArmory_LoadoutItem_TacUI> LoadoutItems;
-//var UIBufferedList LockerList;
 
 simulated function InitArmory(StateObjectReference UnitRef, optional name DispEvent, optional name SoldSpawnEvent, optional name NavBackEvent, optional name HideEvent, optional name RemoveEvent, optional bool bInstant = false, optional XComGameState InitCheckGameState)
 {
 	super.InitArmory(UnitRef, DispEvent, SoldSpawnEvent, NavBackEvent, HideEvent, RemoveEvent, bInstant, InitCheckGameState);
 
 	CreateItemCategoryFilterPanel();
+
+	//bLoadAll = true;
+	//UpdateLockerList();
+	//bLoadAll = false;
 }
 
 simulated function CreateItemCategoryFilterPanel()
@@ -57,14 +60,16 @@ simulated function ChangeActiveList(UIList kActiveList, optional bool bSkipAnima
 	{
 		ReleaseAllPawns();
 		ItemCategoryFilterPanel.Show();
-		LockerList.SetSelectedIndex(0, true);
+
+		//@TODO set first visible item
+		//LockerList.SetSelectedIndex(0, true);
+		
 		LockerList.EnableNavigation();
 		LockerList.Navigator.SelectFirstAvailable();
 	}
 
 
 	`LOG(default.class @ GetFuncName() @ `ShowVar(bEquppedList) @ PawnLocationTag,, 'TacUI');
-	ScriptTrace();
 
 	super.ChangeActiveList(kActiveList, bSkipAnimation);
 }
@@ -74,7 +79,7 @@ simulated function TacUIFilters GetFilterState()
 	local XComGameState_LoadoutFilter LoadoutFilterGameState;
 
 	LoadoutFilterGameState = class'XComGameState_LoadoutFilter'.static.GetLoadoutFilterGameState();
-	return LoadoutFilterGameState.GetFilter(UnitReference.ObjectID);
+	return LoadoutFilterGameState.GetFilter(UnitReference.ObjectID, SelectedSlot);
 }
 
 simulated function UpdateLockerList()
@@ -116,7 +121,7 @@ simulated function UpdateLockerList()
 			continue;
 		}
 
-		if(ShowInLockerList(Item, SelectedSlot))
+		if(ShowInLockerList(Item, SelectedSlot) || bLoadAll)
 		{
 			LockerItem.Item = Item;
 			LockerItem.DisabledReason = GetDisabledReason(Item, SelectedSlot);
@@ -135,8 +140,7 @@ simulated function UpdateLockerList()
 		}
 	}
 
-	ItemCategoryFilterPanel.ResetFilters();
-	ItemCategoryFilterPanel.AddFilters(ActiveItemCategories);
+	ItemCategoryFilterPanel.AddFilters(ActiveItemCategories, SelectedSlot);
 
 	//LockerList.ClearItems();
 
@@ -155,7 +159,8 @@ simulated function UpdateLockerList()
 	{
 		LockerItem = LockerItems[Index];
 
-		if (FilterState.CategoryFilters.Length > 0 &&
+		if (!bLoadAll &&
+			FilterState.CategoryFilters.Length > 0 &&
 			FilterState.CategoryFilters.Find(LockerItem.ItemCategory) == INDEX_NONE)
 		{
 			continue;
@@ -295,7 +300,7 @@ simulated function OnSelectionChanged(UIList ContainerList, int ItemIndex)
 	local UIArmory_LoadoutItem_TacUI ContainerSelection;
 	local UIArmory_LoadoutItem EquippedSelection;
 	local StateObjectReference EmptyRef, ContainerRef, EquippedRef;
-	local XComGameState_Item Weapon;
+	local XComGameState_Item ItemState;
 
 	ContainerSelection = UIArmory_LoadoutItem_TacUI(ContainerList.GetSelectedItem());
 	EquippedSelection = UIArmory_LoadoutItem(EquippedList.GetSelectedItem());
@@ -308,8 +313,12 @@ simulated function OnSelectionChanged(UIList ContainerList, int ItemIndex)
 
 	if (ContainerSelection != none && ContainerRef != EmptyRef)
 	{
-		Weapon = XComGameState_Item(`XCOMHISTORY.GetGameStateForObjectID(ContainerRef.ObjectID));
-		CreateWeaponPawn(Weapon);
+		ItemState = XComGameState_Item(`XCOMHISTORY.GetGameStateForObjectID(ContainerRef.ObjectID));
+		CreateItemPawn(ItemState);
+	}
+	else if(ContainerSelection != none)
+	{
+		ReleaseAllPawns();
 	}
 
 	InfoTooltip.HideTooltip();
@@ -328,7 +337,6 @@ simulated function OnCancel()
 	if(ActiveList == EquippedList)
 	{
 		`LOG(default.class @ GetFuncName() @ "EquppedList" @ PawnLocationTag,, 'TacUI');
-		ScriptTrace();
 
 		ReleaseAllPawns();
 		CreateSoldierPawn();
@@ -353,7 +361,6 @@ simulated function ReleaseAllPawns()
 	local UIScreenStack ScreenStack;
 
 	`LOG(default.class @ GetFuncName(),, 'TacUI');
-	ScriptTrace();
 
 	ScreenStack = `SCREENSTACK;
 	for(i = ScreenStack.Screens.Length - 1; i >= 0; --i)
@@ -367,44 +374,57 @@ simulated function ReleaseAllPawns()
 }
 
 
-simulated function CreateWeaponPawn(XComGameState_Item Weapon, optional Rotator DesiredRotation)
+simulated function CreateItemPawn(XComGameState_Item Item, optional Rotator DesiredRotation)
 {
 	local Rotator NoneRotation;
 	local XGWeapon WeaponVisualizer;
 	
-	// Make sure to clean up weapon actors left over from previous Armory screens.
+	// Make sure to clean up Item actors left over from previous Armory screens.
 	if(ActorPawn == none)
 		ActorPawn = UIArmory(Movie.Stack.GetLastInstanceOf(class'UIArmory')).ActorPawn;
 
-	// Clean up previous weapon actor
+	// Clean up previous Item actor
 	if( ActorPawn != none )
 		ActorPawn.Destroy();
 
-	WeaponVisualizer = XGWeapon(Weapon.GetVisualizer());
+	WeaponVisualizer = XGWeapon(Item.GetVisualizer());
 	if( WeaponVisualizer != none )
 	{
 		WeaponVisualizer.Destroy();
 	}
 
-	class'XGItem'.static.CreateVisualizer(Weapon);
-	WeaponVisualizer = XGWeapon(Weapon.GetVisualizer());
-	ActorPawn = WeaponVisualizer.GetEntity();
+	if (X2GremlinTemplate(Item.GetMyTemplate()) != none)
+	{
+		//@TODO Fix me i am broken
+		//ActorPawn = Movie.Pres.GetUIPawnMgr().GetCosmeticPawn(eInvSlot_SecondaryWeapon, UnitReference.ObjectID);
+	}
+	else
+	{
+		class'XGItem'.static.CreateVisualizer(Item);
+		WeaponVisualizer = XGWeapon(Item.GetVisualizer());
+		ActorPawn = WeaponVisualizer.GetEntity();
+	}
 
-	PawnLocationTag = X2WeaponTemplate(Weapon.GetMyTemplate()).UIArmoryCameraPointTag;
+	if (ActorPawn != none)
+	{
+		PawnLocationTag = X2WeaponTemplate(Item.GetMyTemplate()).UIArmoryCameraPointTag;
 
-	if (PawnLocationTag == '')
-		PawnLocationTag = 'UIPawnLocation_WeaponUpgrade_Shotgun';
+		if (PawnLocationTag == '')
+			PawnLocationTag = 'UIPawnLocation_WeaponUpgrade_Shotgun';
 
-	if(DesiredRotation == NoneRotation)
-		DesiredRotation = GetPlacementActor().Rotation;
+		if(DesiredRotation == NoneRotation)
+			DesiredRotation = GetPlacementActor().Rotation;
 
-	ActorPawn.SetLocation(GetPlacementActor().Location);
-	ActorPawn.SetRotation(DesiredRotation);
-	ActorPawn.SetDrawScale(0.6);
-	ActorPawn.SetHidden(false);
+		ActorPawn.SetLocation(GetPlacementActor().Location);
+		ActorPawn.SetRotation(DesiredRotation);
+		if (X2WeaponTemplate(Item.GetMyTemplate()) != none)
+		{
+			ActorPawn.SetDrawScale(0.4);
+		}
+		ActorPawn.SetHidden(false);
+	}
 
 	`LOG(default.class @ GetFuncName() @ ActorPawn @ PawnLocationTag,, 'TacUI');
-	ScriptTrace();
 }
 
 simulated function OnItemClicked(UIList ContainerList, int ItemIndex)
@@ -530,7 +550,6 @@ simulated function CreateSoldierPawn(optional Rotator DesiredRotation)
 simulated function RequestPawn(optional Rotator DesiredRotation)
 {
 	`LOG(default.class @ GetFuncName(),, 'TacUI');
-	ScriptTrace();
 
 	PawnLocationTag = 'UIPawnLocation_Armory';
 	

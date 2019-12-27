@@ -28,7 +28,10 @@ public function AddFilter(TacUIFilters Filter)
 {
 	local int Index;
 
-	Index = UIFilters.Find('UnitStateObjectID', Filter.UnitStateObjectID);
+	Index = UIFilters.Find('FilterKey', Filter.UnitStateObjectID $ Filter.InventorySlot);
+
+	Filter.FilterKey = Filter.UnitStateObjectID $ Filter.InventorySlot;
+
 	if (Index != INDEX_NONE)
 	{
 		UIFilters[Index] = Filter;
@@ -39,12 +42,12 @@ public function AddFilter(TacUIFilters Filter)
 	}
 }
 
-public function TacUIFilters GetFilter(int UnitStateObjectID)
+public function TacUIFilters GetFilter(int UnitStateObjectID, EInventorySlot InventorySlot)
 {
 	local TacUIFilters Filter;
 	local int Index;
 
-	Index = UIFilters.Find('UnitStateObjectID', UnitStateObjectID);
+	Index = UIFilters.Find('FilterKey', UnitStateObjectID $ InventorySlot);
 	if (Index != INDEX_NONE)
 	{
 		Filter = UIFilters[Index];

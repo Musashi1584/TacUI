@@ -11,6 +11,9 @@ const BGPaddingTop = 50;
 var public UIList List;
 var public UIText Header;
 
+var bool bShrinkToFit;
+var int ListItemPadding;
+
 simulated static function UIListPanel CreateListPanel(
 	class<UIListPanel> ClassIn,
 	UIPanel ParentPanelIn,
@@ -35,11 +38,15 @@ simulated function UIList CreateList(name ListName, string ListTitle)
 	List.bAnimateOnInit = false;
 	List.bSelectFirstAvailable = false;
 	List.BGPaddingTop = BGPaddingTop;
+	List.ItemPadding = ListItemPadding;
 	List.InitList(ListName, 0, BGPaddingTop, Width, Height, false, true, class'UIUtilities_Controls'.const.MC_X2Background);
-	List.BG.SetSize(Width, Height);
+	//List.BG.SetSize(Width, Height);
+
+	if (bShrinkToFit)
+		List.ShrinkToFit();
 
 	// this allows us to send mouse scroll events to the list
-	List.BG.ProcessMouseEvents(List.OnChildMouseEvent);
+	//List.BG.ProcessMouseEvents(List.OnChildMouseEvent);
 
 	Header = Spawn(class'UIText', self).InitText('ListHeader');
 	Header.SetPosition(Padding, Padding*2);
@@ -81,4 +88,5 @@ defaultProperties
 	bAnimateOnInit = false;
 	bIsNavigable = false;
 	bCascadeFocus = false;
+	ListItemPadding = 5;
 }
