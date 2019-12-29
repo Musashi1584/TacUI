@@ -15,18 +15,17 @@ struct TUILockerItemTacUI
 
 const LockerListWidth = 460;
 
-var bool bLoadAll, bLoadFilters;
+var bool bLoadFilters;
 var EInventorySlot SelectedSlot;
 var array<TUILockerItemTacUI> LockerItems;
 var array<name> ActiveItemCategories;
 var UIItemCategoryFilterPanel ItemCategoryFilterPanel;
 var array<UIArmory_LoadoutItem_TacUI> LoadoutItems;
-var private int LazyLoadIndex;
+var private int ListItemIndex, ItemCreatedIndex;
+var private TacUIFilters FilterState;
 
 simulated function InitArmory(StateObjectReference UnitRef, optional name DispEvent, optional name SoldSpawnEvent, optional name NavBackEvent, optional name HideEvent, optional name RemoveEvent, optional bool bInstant = false, optional XComGameState InitCheckGameState)
 {
-	bLoadFilters = true;
-
 	Movie.PreventCacheRecycling();
 
 	super(UIArmory).InitArmory(UnitRef, DispEvent, SoldSpawnEvent, NavBackEvent, HideEvent, RemoveEvent, bInstant, InitCheckGameState);
@@ -57,15 +56,12 @@ simulated function InitArmory(StateObjectReference UnitRef, optional name DispEv
 	PopulateData();
 
 	CreateItemCategoryFilterPanel();
-
-	bLoadAll = true;
 }
 
 simulated function PopulateData()
 {
 	CreateSoldierPawn();
 	UpdateEquippedList();
-	//UpdateLockerList();
 	ChangeActiveList(EquippedList, true);
 }
 
@@ -96,8 +92,6 @@ simulated function CreateItemCategoryFilterPanel()
 		LockerListContainer
 	);
 	ItemCategoryFilterPanel.SetPosition(LockerListWidth + 50, 0);
-	//ItemCategoryFilterPanel.SetSize(203, 230);
-	//ItemCategoryFilterPanel.SetPanelScale(0.7);
 	ItemCategoryFilterPanel.Hide();
 }
 
@@ -112,184 +106,16 @@ simulated function ChangeActiveList(UIList kActiveList, optional bool bSkipAnima
 		ReleaseAllPawns();
 		CreateSoldierPawn();
 		ItemCategoryFilterPanel.Hide();
-		LockerList.DisableNavigation();
 	}
 	else
 	{
 		ReleaseAllPawns();
 		ItemCategoryFilterPanel.Show();
-		SetFirstVisibleIndex(LockerList);
-		LockerList.EnableNavigation();
-		LockerList.Navigator.SelectFirstAvailable();
 	}
-
 
 	`LOG(default.class @ GetFuncName() @ `ShowVar(bEquppedList) @ PawnLocationTag,, 'TacUI');
 
 	super.ChangeActiveList(kActiveList, bSkipAnimation);
-}
-
-simulated function UpdateLockerList()
-{
-	local XComGameState_Item Item;
-	local StateObjectReference ItemRef;
-	local TUILockerItemTacUI LockerItem;
-	local array<StateObjectReference> Inventory;
-	local int Index;
-	local TacUIFilters FilterState;
-	local UIArmory_LoadoutItem_TacUI LoadoutItem;
-
-	LockerList.SetWidth(LockerListWidth);
-	
-	`LOG(default.class @ GetFuncName() @ "Start",, 'TacUI');
-	bLoadAll = false;
-
-	SelectedSlot = GetSelectedSlot();
-
-	// set title according to selected slot
-	// Issue #118
-	LocTag.StrValue0 = class'CHItemSlot'.static.SlotGetName(SelectedSlot);
-	//LocTag.StrValue0 = m_strInventoryLabels[SelectedSlot];
-	MC.FunctionString("setRightPanelTitle", `XEXPAND.ExpandString(m_strLockerTitle));
-
-	GetInventory(Inventory);
-	LockerItems.Length = 0;
-	ActiveItemCategories.Length = 0;
-
-	FilterState = GetFilterState();
-
-	`LOG(default.class @ GetFuncName() @ "Gather Data Start",, 'TacUI');
-
-	foreach Inventory(ItemRef)
-	{
-		Item = GetItemFromHistory(ItemRef.ObjectID);
-
-		if (Item == none)
-		{
-			continue;
-		}
-
-		if(ShowInLockerList(Item, SelectedSlot) || bLoadAll)
-		{
-			LockerItem.Item = Item;
-			LockerItem.DisabledReason = GetDisabledReason(Item, SelectedSlot);
-			LockerItem.CanBeEquipped = LockerItem.DisabledReason == ""; // sorting optimization
-			LockerItem.ItemCategory = class'X2TacUIHelper'.static.GetItemCategory(Item);
-			if (LockerItem.CanBeEquipped)
-			{
-				// Collect all categories
-				if (ActiveItemCategories.Find(LockerItem.ItemCategory) == INDEX_NONE)
-				{
-					ActiveItemCategories.AddItem(LockerItem.ItemCategory);
-				}
-
-				LockerItems.AddItem(LockerItem);
-			}
-		}
-	}
-
-	if (bLoadFilters)
-		ItemCategoryFilterPanel.AddFilters(ActiveItemCategories, SelectedSlot);
-
-	//LockerList.ClearItems();
-
-	LockerItems.Sort(SortLockerListByUpgradesTacUI);
-	LockerItems.Sort(SortLockerListByTierTacUI);
-	LockerItems.Sort(SortLockerListByEquipTacUI);
-
-	`LOG(default.class @ GetFuncName() @ "Gather Data End",, 'TacUI');
-	// Dont clear the list for perfomance reasons, just hide the items
-	if (LockerList.GetItemCount() > 0)
-		HideAllLoadoutItems();
-
-	`LOG(default.class @ GetFuncName() @ "Update UI Items Start",, 'TacUI');
-	//for (Index = LockerItems.Length - 1; Index >= 0; Index--)
-	for (Index = 0; Index < LockerItems.Length; Index++)
-	{
-		LockerItem = LockerItems[Index];
-
-		if (!bLoadAll &&
-			FilterState.CategoryFilters.Length > 0 &&
-			FilterState.CategoryFilters.Find(LockerItem.ItemCategory) == INDEX_NONE)
-		{
-			continue;
-		}
-
-		LoadoutItem = FindItemById(LockerItem.Item.ObjectID);
-
-		if (LoadoutItem != none)
-		{
-			LoadoutItem.Show();
-			LoadoutItem.PopulateData(LockerItem.Item);
-			//`LOG(default.class @ GetFuncName() @ "Update"  @ Index @ LockerItem.Item.GetMyTemplateName() @ LoadoutItem.Width @ LoadoutItem.IsVisible(),, 'TacUI');
-		}
-		else
-		{
-			LoadoutItem = UIArmory_LoadoutItem_TacUI(LockerList.CreateItem(class'UIArmory_LoadoutItem_TacUI'));
-			LoadoutItem.InitLoadoutItem
-			(
-				LockerItem.Item,
-				SelectedSlot,
-				false,
-				LockerItem.DisabledReason,
-				LockerListWidth
-			);
-			//`LOG(default.class @ GetFuncName() @ "Create"  @ Index @ LockerItem.Item.GetMyTemplateName() @ LoadoutItem.Width @ LoadoutItem.IsVisible(),, 'TacUI');
-		}
-	}
-	//LockerList.SetWidth(LockerListWidth);//538;
-	RealizeItems();
-	LockerList.RealizeList();
-	`LOG(default.class @ GetFuncName() @ "Update UI Items End",, 'TacUI');
-
-	// If we have an invalid SelectedIndex, just try and select the first thing that we can.
-	// Otherwise let's make sure the Navigator is selecting the right thing.
-	if(LockerList.SelectedIndex < 0 || LockerList.SelectedIndex >= LockerList.ItemCount)
-		LockerList.Navigator.SelectFirstAvailable();
-	else
-	{
-		LockerList.Navigator.SetSelected(LockerList.GetSelectedItem());
-	}
-	OnSelectionChanged(ActiveList, ActiveList.SelectedIndex);
-}
-
-simulated function RealizeItems(optional int StartingIndex)
-{
-	local int i;
-	local float NextItemPosition;
-	local UIPanel Item;
-
-	if(StartingIndex > 0)
-	{
-		Item = LockerList.GetItem(StartingIndex - 1);
-		if (Item != none && Item.bIsVisible)
-		{
-			if (LockerList.bIsHorizontal)
-				NextItemPosition = Item.X + Item.Width + LockerList.ItemPadding;
-			else
-				NextItemPosition = Item.Y + Item.Height + LockerList.ItemPadding;
-		}
-	}
-
-	for(i = StartingIndex; i < LockerList.ItemCount; ++i)
-	{
-		Item = LockerList.GetItem(i);
-		if (Item != none && Item.bIsVisible)
-		{
-			if (LockerList.bIsHorizontal)
-			{
-				Item.SetX(NextItemPosition);
-				NextItemPosition += Item.Width + (i < LockerList.ItemCount - 1) ? LockerList.ItemPadding : 0;
-			}
-			else
-			{
-				Item.SetY(NextItemPosition);
-				NextItemPosition += Item.Height + (i < LockerList.ItemCount - 1) ? LockerList.ItemPadding : 0;
-			}
-		}
-	}
-
-	LockerList.TotalItemSize = NextItemPosition + LockerList.ItemWidthBuffer;
 }
 
 simulated function UIArmory_LoadoutItem_TacUI FindItemById(int ObjectID)
@@ -307,26 +133,6 @@ simulated function UIArmory_LoadoutItem_TacUI FindItemById(int ObjectID)
 	}
 	return none;
 }
-
-simulated function HideAllLoadoutItems()
-{
-	local UIArmory_LoadoutItem_TacUI LoadoutItem;
-	local int Index;
-
-	`LOG(default.class @ GetFuncName() @ "Start",, 'TacUI');
-	for(Index = 0; Index < LockerList.GetItemCount(); ++ Index)
-	{
-		LoadoutItem = UIArmory_LoadoutItem_TacUI(LockerList.ItemContainer.ChildPanels[Index]);
-		if(LoadoutItem != none)
-		{
-			LoadoutItem.Hide();
-		}
-	}
-	`LOG(default.class @ GetFuncName() @ "End",, 'TacUI');
-	//LockerList.RealizeItems();
-	//LockerList.RealizeList();
-}
-
 
 simulated function OnSelectionChanged(UIList ContainerList, int ItemIndex)
 {
@@ -373,16 +179,6 @@ simulated function OnCancel()
 
 		ReleaseAllPawns();
 		CreateSoldierPawn();
-
-		// If we are in the tutorial and came from squad select when the medikit objective is active, don't allow backing out
-		//if (!Movie.Pres.ScreenStack.HasInstanceOf(class'UISquadSelect') || class'XComGameState_HeadquartersXCom'.static.GetObjectiveStatus('T0_M5_EquipMedikit') != eObjectiveState_InProgress)
-		//{
-		//	ActorPawn.SetHidden(true);
-		//	ReleasePawn(true);
-		//	PawnLocationTag = 'UIPawnLocation_Armory';
-		//	CreateSoldierPawn();
-		//	ActorPawn.SetHidden(false);
-		//}
 	}
 	super.OnCancel(); // exits screen
 }
@@ -472,8 +268,9 @@ simulated function OnItemClicked(UIList ContainerList, int ItemIndex)
 
 	if(ContainerList == EquippedList)
 	{
-		UpdateLockerList();
+		bLoadFilters = true;
 		ChangeActiveList(LockerList);
+		UpdateLockerList();
 	}
 	else
 	{
@@ -708,8 +505,6 @@ simulated function TacUIFilters GetFilterState()
 	return LoadoutFilterGameState.GetFilter(UnitReference.ObjectID, SelectedSlot);
 }
 
-
-
 simulated function int SortLockerListByEquipTacUI(TUILockerItemTacUI A, TUILockerItemTacUI B)
 {
 	if(A.CanBeEquipped && !B.CanBeEquipped) return 1;
@@ -753,89 +548,145 @@ simulated function int SortLockerListByUpgradesTacUI(TUILockerItemTacUI A, TUILo
 }
 
 
-auto state LazyLoadAll
+simulated function UpdateLockerList()
 {
+	GotoState('LoadLockerList');
+}
 
-	function LoadInventory()
+simulated function SelectItem()
+{
+	// If we have an invalid SelectedIndex, just try and select the first thing that we can.
+	// Otherwise let's make sure the Navigator is selecting the right thing.
+	if(LockerList.SelectedIndex < 0 || LockerList.SelectedIndex >= LockerList.ItemCount)
+		LockerList.Navigator.SelectFirstAvailable();
+	else
 	{
-		local XComGameState_Item Item;
-		local StateObjectReference ItemRef;
-		local TUILockerItemTacUI LockerItem;
-		local array<StateObjectReference> Inventory;
-		
+		LockerList.Navigator.SetSelected(LockerList.GetSelectedItem());
+	}
+	OnSelectionChanged(ActiveList, ActiveList.SelectedIndex);
+}
 
-		if (bLoadAll)
+function LoadInventory()
+{
+	local XComGameState_Item Item;
+	local StateObjectReference ItemRef;
+	local TUILockerItemTacUI LockerItem;
+	local array<StateObjectReference> Inventory;
+
+	`LOG(default.class @ GetFuncName() @ "Start",, 'TacUI');
+
+	LockerList.SetWidth(LockerListWidth);
+	
+	SelectedSlot = GetSelectedSlot();
+
+	// set title according to selected slot
+	// Issue #118
+	LocTag.StrValue0 = class'CHItemSlot'.static.SlotGetName(SelectedSlot);
+	//LocTag.StrValue0 = m_strInventoryLabels[SelectedSlot];
+	MC.FunctionString("setRightPanelTitle", `XEXPAND.ExpandString(m_strLockerTitle));
+
+	GetInventory(Inventory);
+	LockerItems.Length = 0;
+	ActiveItemCategories.Length = 0;
+
+	`LOG(default.class @ GetFuncName() @ "Gather Data Start",, 'TacUI');
+
+	foreach Inventory(ItemRef)
+	{
+		Item = GetItemFromHistory(ItemRef.ObjectID);
+
+		if (Item == none)
 		{
-			LockerItems.Length = 0;
-			GetInventory(Inventory);
+			continue;
+		}
 
-			foreach Inventory(ItemRef)
+		if(ShowInLockerList(Item, SelectedSlot))
+		{
+			LockerItem.Item = Item;
+			LockerItem.DisabledReason = GetDisabledReason(Item, SelectedSlot);
+			LockerItem.CanBeEquipped = LockerItem.DisabledReason == ""; // sorting optimization
+			LockerItem.ItemCategory = class'X2TacUIHelper'.static.GetItemCategory(Item);
+			if (LockerItem.CanBeEquipped)
 			{
-				Item = GetItemFromHistory(ItemRef.ObjectID);
-
-				if (Item != none)
+				// Collect all categories
+				if (ActiveItemCategories.Find(LockerItem.ItemCategory) == INDEX_NONE)
 				{
-					LockerItem.Item = Item;
-					LockerItem.DisabledReason = GetDisabledReason(Item, SelectedSlot);
-					LockerItem.CanBeEquipped = LockerItem.DisabledReason == ""; // sorting optimization
-					LockerItem.ItemCategory = class'X2TacUIHelper'.static.GetItemCategory(Item);
-					if (LockerItem.CanBeEquipped)
-					{
-						LockerItems.AddItem(LockerItem);
-					}
+					ActiveItemCategories.AddItem(LockerItem.ItemCategory);
 				}
-			}
 
-			LockerItems.Sort(SortLockerListByUpgradesTacUI);
-			LockerItems.Sort(SortLockerListByTierTacUI);
-			LockerItems.Sort(SortLockerListByEquipTacUI);
+				LockerItems.AddItem(LockerItem);
+			}
 		}
 	}
 
-	function LazyLoadUIItems(int Index)
+	if (bLoadFilters)
 	{
-		local TUILockerItemTacUI LockerItem;
-		local UIArmory_LoadoutItem_TacUI LoadoutItem;
-		
-		LockerItem = LockerItems[Index];
-
-		LoadoutItem = UIArmory_LoadoutItem_TacUI(LockerList.CreateItem(class'UIArmory_LoadoutItem_TacUI'));
-		LoadoutItem.InitLoadoutItem
-		(
-			LockerItem.Item,
-			eInvSlot_PrimaryWeapon,
-			false,
-			LockerItem.DisabledReason
-		);
-		//LockerList.MoveItemToBottom(LoadoutItem);
-		LoadoutItem.Hide();
-		`LOG(default.class @ GetFuncName() @ Index @ LockerItem.Item.GetMyTemplateName() @ LoadoutItem.Width,, 'TacUI');
+		`LOG(default.class @ GetFuncName() @ "LoadFilters",, 'TacUI');
+		ItemCategoryFilterPanel.PopulateFilters(ActiveItemCategories, SelectedSlot);
 	}
 
+	LockerItems.Sort(SortLockerListByUpgradesTacUI);
+	LockerItems.Sort(SortLockerListByTierTacUI);
+	LockerItems.Sort(SortLockerListByEquipTacUI);
+}
+
+function bool CreateListItem(int Index)
+{
+	local TUILockerItemTacUI LockerItem;
+	local UIArmory_LoadoutItem_TacUI LoadoutItem;
+		
+	LockerItem = LockerItems[Index];
+
+	if (FilterState.CategoryFilters.Length > 0 &&
+		FilterState.CategoryFilters.Find(LockerItem.ItemCategory) == INDEX_NONE)
+	{
+		return false;
+	}
+
+	LoadoutItem = UIArmory_LoadoutItem_TacUI(LockerList.CreateItem(class'UIArmory_LoadoutItem_TacUI'));
+	LoadoutItem.InitLoadoutItem
+	(
+		LockerItem.Item,
+		SelectedSlot,
+		false,
+		LockerItem.DisabledReason,
+		LockerListWidth
+	);
+	return true;
+	//`LOG(default.class @ GetFuncName() @ Index @ LockerItem.Item.GetMyTemplateName() @ LoadoutItem.Width,, 'TacUI');
+}
+
+state LoadLockerList
+{
 
 Begin:
-	//LazyLoadIndex = 0;
-	//LoadInventory();
+	`LOG(default.class @ GetFuncName() @ "Start",, 'TacUI');
+	ListItemIndex = 0;
+	ItemCreatedIndex = 0;
+	LoadInventory();
+	FilterState = GetFilterState();
+	LockerList.ClearItems();
 
-	//while(bLoadAll)
-	//{
-	//	if (LazyLoadIndex >= LockerItems.Length)
-	//	{
-	//		bLoadAll = false;
-	//		//LockerList.SetWidth(LockerListWidth);//538;
-	//		RealizeItems();
-	//		LockerList.RealizeList();
-	//		`LOG(default.class @ GetFuncName() @ "RealizeList",, 'TacUI');
-	//		break;
-	//	}
-	//
-	//	LazyLoadUIItems(LazyLoadIndex);
-	//	if (LazyLoadIndex % 10 == 0)
-	//	{
-	//		sleep(0.1);
-	//	}
-	//	LazyLoadIndex++;
-	//}
+	`LOG(default.class @ GetFuncName() @ "Creating UI",, 'TacUI');
+	while(ListItemIndex < LockerItems.Length)
+	{
+		if (CreateListItem(ListItemIndex))
+		{
+			ItemCreatedIndex++;
+		}
+
+		if (ItemCreatedIndex % 10 == 0 && ItemCreatedIndex != 0)
+		{
+			sleep(0);
+		}
+
+		ListItemIndex++;
+	}
+
+	LockerList.RealizeItems();
+	LockerList.RealizeList();
+	SelectItem();
+	`LOG(default.class @ GetFuncName() @ "End",, 'TacUI');
 }
 
 defaultproperties

@@ -25,7 +25,7 @@ simulated static function UIItemCategoryFilterPanel CreateItemCategoryFilterPane
 	return This;
 }
 
-simulated function AddFilters(array<name> FilterNames, EInventorySlot InventorySlotIn)
+simulated function PopulateFilters(array<name> FilterNames, EInventorySlot InventorySlotIn)
 {
 	local XComGameState_LoadoutFilter LoadoutFilterGameState;
 	local name FilterName;
@@ -121,7 +121,6 @@ simulated private function ApplyFilters()
 	{	
 		LoadoutScreen.bLoadFilters = false;
 		LoadoutScreen.UpdateLockerList();
-		LoadoutScreen.bLoadFilters = true;
 	}
 }
 
