@@ -35,7 +35,7 @@ public function UIFilterCheckbox AddFilter(string FilterLabel, EInventorySlot In
 {
 	local UIFilterCheckbox Checkbox;
 
-	`LOG(default.class @ GetFuncName() @ `ShowVar(FilterLabel) @ `ShowVar(List),, 'TacUI');
+	//`LOG(default.class @ GetFuncName() @ `ShowVar(FilterLabel) @ `ShowVar(List),, 'TacUI');
 
 	Checkbox = class'UIFilterCheckbox'.static.CreateCheckbox(
 		List,

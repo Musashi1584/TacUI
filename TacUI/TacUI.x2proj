@@ -50,6 +50,9 @@
     <Content Include="Src\MusashisTacUI\Classes\UIListPanel.uc">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Src\MusashisTacUI\Classes\UILockerListContainer.uc">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Src\MusashisTacUI\Classes\X2DownloadableContentInfo_MusashisTacUI.uc" />
     <Content Include="Src\MusashisTacUI\Classes\XComGameState_LoadoutFilter.uc">
       <SubType>Content</SubType>

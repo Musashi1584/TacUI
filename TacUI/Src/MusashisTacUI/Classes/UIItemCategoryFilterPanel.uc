@@ -118,8 +118,10 @@ simulated private function ApplyFilters()
 	LoadoutScreen = UIArmory_Loadout_TacUI(ScreenStack.GetFirstInstanceOf(class'UIArmory_Loadout_TacUI'));
 
 	if (LoadoutScreen != none)
-	{
+	{	
+		LoadoutScreen.bLoadFilters = false;
 		LoadoutScreen.UpdateLockerList();
+		LoadoutScreen.bLoadFilters = true;
 	}
 }
 

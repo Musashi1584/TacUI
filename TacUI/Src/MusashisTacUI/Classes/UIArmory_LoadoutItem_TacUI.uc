@@ -20,10 +20,11 @@ simulated function UIArmory_LoadoutItem_TacUI InitLoadoutItem(
 	XComGameState_Item Item,
 	EInventorySlot InitEquipmentSlot,
 	optional bool InitSlot,
-	optional string InitDisabledReason
+	optional string InitDisabledReason,
+	optional int DefaultWidth = -1
 )
 {
-	InitListItem();
+	InitListItem(, DefaultWidth, DefaultWidth - 120);
 
 	if (Item != none)
 	{
@@ -49,6 +50,8 @@ simulated function PopulateData(optional XComGameState_Item Item)
 {
 	local string Title;
 	local string Category;
+	local array<string> AttachmentIcons;
+	local string Icon, Buffer;
 
 	if(Item == None)
 		Item = XComGameState_Item(`XCOMHISTORY.GetGameStateForObjectID(ItemRef.ObjectID));
@@ -68,31 +71,31 @@ simulated function PopulateData(optional XComGameState_Item Item)
 		{
 			Title @= "(" $ class'UIUtilities_Strategy'.static.GetXComHQ().GetNumItemInInventory(ItemTemplate.DataName) $ ")";
 		}
+
+		if (Item.GetMyWeaponUpgradeCount() > 0)
+		{
+			AttachmentIcons = Item.GetMyWeaponUpgradeTemplatesCategoryIcons();
+			Buffer = "";
+
+			foreach AttachmentIcons(Icon)
+			{
+				Buffer $= class'UIUtilities_Text'.static.InjectImage(Icon, 26, 26, -4);
+			}
+
+			Title @= Buffer;
+
+			//class'UIUtilities_Text'.static.InjectImage(class'UIUtilities_Image'.const.HTML_AttentionIcon, 26, 26, -4);
+		}
+		
 	}
 
 	UpdateDataValue(Title, Category);
 }
 
 
-simulated function UIArmory_LoadoutItem_TacUI SetLocked(bool Locked)
-{
-	//if(IsLocked != Locked)
-	//{
-	//	IsLocked = Locked;
-	//	MC.FunctionBool("setLocked", IsLocked);
-	//
-	//	if(!IsLocked)
-	//		OnLoseFocus();
-	//}
-	return self;
-}
-
-
 defaultproperties
 {
-	//width = 313;
-	//height = 38;
+	//LibID = "X2MechaListItem"
 	bAnimateOnInit = false
-	LibID = "X2MechaListItem"
 	bCascadeFocus = false
 }
