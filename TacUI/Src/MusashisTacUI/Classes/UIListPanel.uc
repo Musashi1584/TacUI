@@ -43,8 +43,9 @@ simulated function UIList CreateList(name ListName, string ListTitle)
 	//List.BG.SetSize(Width, Height);
 
 	if (bShrinkToFit)
+	{
 		List.ShrinkToFit();
-
+	}
 	// this allows us to send mouse scroll events to the list
 	//List.BG.ProcessMouseEvents(List.OnChildMouseEvent);
 

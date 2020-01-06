@@ -20,6 +20,9 @@
     <Folder Include="Src\MusashisTacUI\Classes\" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Config\XComGameData.ini">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="ReadMe.txt" />
     <Content Include="ModPreview.jpg" />
     <Content Include="Config\XComEditor.ini" />
@@ -44,7 +47,7 @@
     <Content Include="Src\MusashisTacUI\Classes\UIFilterPanel.uc">
       <SubType>Content</SubType>
     </Content>
-    <Content Include="Src\MusashisTacUI\Classes\UIItemCategoryFilterPanel.uc">
+    <Content Include="Src\MusashisTacUI\Classes\UIArmory_LoadoutFilterPanel.uc">
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\MusashisTacUI\Classes\UIListPanel.uc">
@@ -54,10 +57,16 @@
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\MusashisTacUI\Classes\X2DownloadableContentInfo_MusashisTacUI.uc" />
+    <Content Include="Src\MusashisTacUI\Classes\X2EventListener_TacUI_Strategy.uc">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Src\MusashisTacUI\Classes\XComGameState_LoadoutFilter.uc">
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\MusashisTacUI\Classes\X2TacUIHelper.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\MusashisTacUI\Classes\XGLocalizedData_TacUI.uc">
       <SubType>Content</SubType>
     </Content>
   </ItemGroup>

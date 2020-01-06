@@ -9,6 +9,7 @@ var privatewrite UIEventHandler OnCheckedChangedHandler;
 
 public static function UIFilterCheckbox CreateCheckbox(
 	UIList ParentPanelIn,
+	name PanelName,
 	optional string InitText,
 	optional bool bInitChecked,
 	optional bool bInitReadOnly,
@@ -21,7 +22,7 @@ public static function UIFilterCheckbox CreateCheckbox(
 	this = ParentPanelIn.Spawn(class'UIFilterCheckbox', ParentPanelIn.ItemContainer);
 
 	this.bAnimateOnInit = false;
-	this.InitListItem(name(InitText));
+	this.InitListItem(PanelName);
 	this.SetWidgetType(EUILineItemType_Checkbox);
 	this.UpdateDataCheckbox(InitText, "", bInitChecked, this.OnCheckboxChanged, this.OnClick);
 	this.Checkbox.SetReadOnly(bInitReadOnly);

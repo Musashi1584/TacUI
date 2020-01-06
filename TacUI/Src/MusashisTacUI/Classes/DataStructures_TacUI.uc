@@ -5,12 +5,24 @@
 //-----------------------------------------------------------
 class DataStructures_TacUI extends Object;
 
+struct TUILockerItemTacUI
+{
+	var bool CanBeEquipped;
+	var string DisabledReason;
+	var XComGameState_Item Item;
+	var name ItemCategory;
+	var name Tech;
+	var string ItemCategoryLocalized;
+	var string FriendlyNameLocalized;
+};
+
+
 struct TacUIFilters
 {
 	var string FilterKey;
 	var EInventorySlot InventorySlot;
 	var int UnitStateObjectID;
-	var array<name> CategoryFilters;
+	var array<name> FilterNames;
 
 	structdefaultproperties
 	{

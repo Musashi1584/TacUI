@@ -1,31 +1,40 @@
 //-----------------------------------------------------------
-//	Class:	UIItemCategoryFilterPanel
+//	Class:	UIArmory_LoadoutFilterPanel
 //	Author: Musashi
 //	
 //-----------------------------------------------------------
-class UIItemCategoryFilterPanel extends UIFilterPanel;
+class UIArmory_LoadoutFilterPanel extends UIFilterPanel;
 
 var protected EInventorySlot InventorySlot;
+var name FilterCategory;
 
-simulated static function UIItemCategoryFilterPanel CreateItemCategoryFilterPanel(
-	UiPanel ParentPanelIn
+simulated static function UIArmory_LoadoutFilterPanel CreateLoadoutFilterPanel(
+	UiPanel ParentPanelIn,
+	string FilterTitle,
+	name FilterCategoryIn,
+	optional bool bUseRadioButtonsIn = false
 )
 {
-	local UIItemCategoryFilterPanel This;
+	local UIArmory_LoadoutFilterPanel This;
 
-	This = UIItemCategoryFilterPanel(class'UIFilterPanel'.static.CreateFilterPanel(
-		class'UIItemCategoryFilterPanel',
+	This = UIArmory_LoadoutFilterPanel(class'UIFilterPanel'.static.CreateFilterPanel(
+		class'UIArmory_LoadoutFilterPanel',
 		ParentPanelIn,
-		"FILTER BY",
-		true
+		FilterTitle,
+		bUseRadioButtonsIn
 	));
 
 	This.OnFilterChangedHandler.AddHandler(this.OnFilterChanged);
+	This.FilterCategory = FilterCategoryIn;
 	
 	return This;
 }
 
-simulated function PopulateFilters(array<name> FilterNames, EInventorySlot InventorySlotIn)
+simulated function PopulateFilters(
+	array<name> FilterNames,
+	EInventorySlot InventorySlotIn,
+	optional array<string> FilterLabels
+)
 {
 	local XComGameState_LoadoutFilter LoadoutFilterGameState;
 	local name FilterName;
@@ -33,6 +42,7 @@ simulated function PopulateFilters(array<name> FilterNames, EInventorySlot Inven
 	local TacUIFilters FilterState;
 	local UIFilterCheckbox Filter;
 	local bool bChecked;
+	local int Index;
 
 	InventorySlot = InventorySlotIn;
 	UnitStateObjectID = GetUnitObjectIDFromArmory();
@@ -40,20 +50,21 @@ simulated function PopulateFilters(array<name> FilterNames, EInventorySlot Inven
 
 	if (LoadoutFilterGameState != none && UnitStateObjectID > 0)
 	{
-		FilterState = LoadoutFilterGameState.GetFilter(UnitStateObjectID, InventorySlot);
+		FilterState = LoadoutFilterGameState.GetFilter(FilterCategory, UnitStateObjectID, InventorySlot);
 	}
 
 	//RemoveUnusedFilters(FilterNames);
 	ResetFilters();
-	foreach FilterNames(FilterName)
+	foreach FilterNames(FilterName, Index)
 	{
 		Filter = GetFilter(FilterName);
-		bChecked = FilterState.CategoryFilters.Find(FilterName) != INDEX_NONE;
+		bChecked = FilterState.FilterNames.Find(FilterName) != INDEX_NONE;
 
 		if (Filter == none)
 		{
 			AddFilter(
-				string(FilterName),
+				FilterName,
+				FilterLabels.Length > 0 ? FilterLabels[Index] : string(FilterName),
 				InventorySlot,
 				bChecked,
 				false
@@ -63,6 +74,15 @@ simulated function PopulateFilters(array<name> FilterNames, EInventorySlot Inven
 		{
 			Filter.Checkbox.SetChecked(bChecked);
 		}
+	}
+
+	if (FilterNames.Length == 0)
+	{
+		Hide();
+	}
+	else
+	{
+		Show();
 	}
 }
 
@@ -98,8 +118,8 @@ simulated function OnFilterChanged(object Source)
 			LoadoutFilterGameState = XComGameState_LoadoutFilter(NewGameState.ModifyStateObject(LoadoutFilterGameState.Class, LoadoutFilterGameState.ObjectID));
 			FilterState.UnitStateObjectID = UnitStateObjectID;
 			FilterState.InventorySlot = InventorySlot;
-			FilterState.CategoryFilters = ActiveFilters;
-			LoadoutFilterGameState.AddFilter(FilterState);
+			FilterState.FilterNames = ActiveFilters;
+			LoadoutFilterGameState.AddFilter(FilterCategory, FilterState);
 			`XCOMHISTORY.AddGameStateToHistory(NewGameState);
 		}
 	}
@@ -119,6 +139,8 @@ simulated private function ApplyFilters()
 
 	if (LoadoutScreen != none)
 	{	
+		LoadoutScreen.LockerList.ClearItems();
+		LoadoutScreen.bAbortLoading = true;
 		LoadoutScreen.bLoadFilters = false;
 		LoadoutScreen.UpdateLockerList();
 	}
