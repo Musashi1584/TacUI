@@ -5,6 +5,10 @@
 //-----------------------------------------------------------
 class XGLocalizedData_TacUI extends Object;
 
+var localized string CategoryFilterTitle;
+var localized string TechFilterTitle;
+var localized string SortTitle;
+
 var localized string ItemCategoryRifle;
 var localized string ItemCategorySniperRifle;
 var localized string ItemCategoryShotgun;

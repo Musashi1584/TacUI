@@ -55,9 +55,28 @@ simulated function InitArmory(StateObjectReference UnitRef, optional name DispEv
 	bLoadFilters = true;
 	PopulateData();
 
-	ItemCategoryFilterPanel = CreateFilterPanel("FILTER BY", CategoryFilter, LockerListWidth + 5, 0);
-	WeaponTechFilterPanel = CreateFilterPanel("FILTER BY", WeaponTechFilter, LockerListWidth + 5, 0);
-	SortPanel = CreateFilterPanel("SORT BY", SortFilter, ItemCategoryFilterPanel.X + ItemCategoryFilterPanel.Width + 25, 0, true);
+	ItemCategoryFilterPanel = CreateFilterPanel(
+		Caps(class'XGLocalizedData_TacUI'.default.CategoryFilterTitle),
+		CategoryFilter, LockerListWidth + 5,
+		0,
+		true
+	);
+	
+	WeaponTechFilterPanel = CreateFilterPanel(
+		Caps(class'XGLocalizedData_TacUI'.default.TechFilterTitle),
+		WeaponTechFilter,
+		LockerListWidth + 5,
+		0,
+		true
+	);
+
+	SortPanel = CreateFilterPanel(
+		Caps(class'XGLocalizedData_TacUI'.default.SortTitle),
+		SortFilter,
+		ItemCategoryFilterPanel.X + ItemCategoryFilterPanel.Width + 25,
+		0,
+		true
+	);
 	//SortPanel = CreateFilterPanel("SORT BY", SortFilter, LockerListWidth + 5, 0 , true);
 }
 
@@ -68,7 +87,7 @@ simulated function PopulateData()
 	UpdateEquippedList();
 	ChangeActiveList(EquippedList, true);
 
-	SortByCategories.AddItem('Default');
+	//SortByCategories.AddItem('Default');
 	SortByCategories.AddItem('Category');
 	SortByCategories.AddItem('Name');
 	SortByCategories.AddItem('Tier');
@@ -133,12 +152,14 @@ simulated function ChangeActiveList(UIList kActiveList, optional bool bSkipAnima
 		ReleaseAllPawns();
 		CreateSoldierPawn();
 		ItemCategoryFilterPanel.Hide();
+		WeaponTechFilterPanel.Hide();
 		SortPanel.Hide();
 	}
 	else
 	{
 		ReleaseAllPawns();
 		ItemCategoryFilterPanel.Show();
+		WeaponTechFilterPanel.Show();
 		SortPanel.Show();
 	}
 
@@ -358,64 +379,10 @@ simulated function UpdateDataTacUI(
 	}
 }
 
-simulated function CreateSoldierPawn(optional Rotator DesiredRotation)
-{
-	local Rotator NoneRotation;
-	local XComLWTuple OverrideTuple; //for issue #229
-	local float CustomScale; // issue #229
-	// Don't do anything if we don't have a valid UnitReference
-	if( UnitReference.ObjectID == 0 ) return;
-
-	if( DesiredRotation == NoneRotation )
-	{
-		if( ActorPawn != none )
-			DesiredRotation = ActorPawn.Rotation;
-		else
-			DesiredRotation.Yaw = -16384;
-	}
-
-	RequestPawn(DesiredRotation);
-	LoadSoldierEquipment();
-	
-	//start issue #229: instead of boolean check, always trigger event to check if we should use custom unit scale.
-	CustomScale = GetUnit().UseLargeArmoryScale() ? LargeUnitScale : 1.0f;
-
-	//set up a Tuple for return value
-	OverrideTuple = new class'XComLWTuple';
-	OverrideTuple.Id = 'OverrideUIArmoryScale';
-	OverrideTuple.Data.Add(3);
-	OverrideTuple.Data[0].kind = XComLWTVBool;
-	OverrideTuple.Data[0].b = false;
-	OverrideTuple.Data[1].kind = XComLWTVFloat;
-	OverrideTuple.Data[1].f = CustomScale;
-	OverrideTuple.Data[2].kind = XComLWTVObject;
-	OverrideTuple.Data[2].o = GetUnit();
-	`XEVENTMGR.TriggerEvent('OverrideUIArmoryScale', OverrideTuple, GetUnit(), none);
-	
-	//if the unit should use the large armory scale by default, then either they'll use the default scale
-	//or a custom one given by a mod according to their character template
-	if(OverrideTuple.Data[0].b || GetUnit().UseLargeArmoryScale()) 
-	{
-		CustomScale = OverrideTuple.Data[1].f;
-		XComUnitPawn(ActorPawn).Mesh.SetScale(CustomScale);
-	}
-	//end issue #229
-
-	// Prevent the pawn from obstructing mouse raycasts that are used to determine the position of the mouse cursor in 3D screens.
-	XComHumanPawn(ActorPawn).bIgnoreFor3DCursorCollision = true;
-
-	UIMouseGuard_RotatePawn(`SCREENSTACK.GetFirstInstanceOf(class'UIMouseGuard_RotatePawn')).SetActorPawn(ActorPawn);
-}
-
-// Override function to RequestPawnByState instead of RequestPawnByID
 simulated function RequestPawn(optional Rotator DesiredRotation)
 {
-	`LOG(default.class @ GetFuncName(),, 'TacUI');
-
 	PawnLocationTag = 'UIPawnLocation_Armory';
-	
-	ActorPawn = Movie.Pres.GetUIPawnMgr().RequestPawnByState(self, GetUnit(), GetPlacementActor().Location, DesiredRotation);
-	ActorPawn.GotoState('CharacterCustomization');
+	super.RequestPawn();
 }
 
 simulated function ReleasePawn(optional bool bForce)

@@ -90,8 +90,8 @@ private function HandleFilterChanged(Object Source) {
 				Filter.Checkbox.SetChecked(false, false);
 			}
 		}
-		// check clicked
-		UIFilterCheckbox(Source).Checkbox.SetChecked(true, false);
+		// (un-)check clicked
+		//UIFilterCheckbox(Source).Checkbox.SetChecked(!UIFilterCheckbox(Source).Checkbox.bChecked, false);
 	}
 
 	`LOG(default.class @ GetFuncName() @ `ShowVar(UIFilterCheckbox(Source).Checkbox.bChecked) @ `ShowVar(OnFilterChangedHandler),, 'TacUI');
