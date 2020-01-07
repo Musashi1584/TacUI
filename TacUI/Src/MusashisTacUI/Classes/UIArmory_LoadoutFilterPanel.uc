@@ -102,7 +102,7 @@ simulated function OnFilterChanged(object Source)
 	for (Index = 0; Index < List.GetItemCount(); Index++)
 	{
 		Filter = UIFilterCheckbox(List.GetItem(Index));
-		`LOG(default.class @ GetFuncName() @ `ShowVar(Filter.Checkbox.MCName) @ `ShowVar(Filter.Checkbox.bChecked),, 'TacUI');
+		//`LOG(default.class @ GetFuncName() @ `ShowVar(Filter.Checkbox.MCName) @ `ShowVar(Filter.Checkbox.bChecked),, 'TacUI');
 		if (Filter.Checkbox.bChecked)
 		{
 			ActiveFilters.AddItem(Filter.MCName);
@@ -126,7 +126,7 @@ simulated function OnFilterChanged(object Source)
 
 	ApplyFilters();
 
-	`LOG(default.class @ GetFuncName() @ `ShowVar(Source) @ `ShowVar(LoadoutFilterGameState) @ `ShowVar(ActiveFilters.Length),, 'TacUI');
+	//`LOG(default.class @ GetFuncName() @ `ShowVar(Source) @ `ShowVar(LoadoutFilterGameState) @ `ShowVar(ActiveFilters.Length),, 'TacUI');
 }
 
 simulated private function ApplyFilters()

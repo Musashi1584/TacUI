@@ -25,7 +25,7 @@ static function CHEventListenerTemplate CreateListenerTemplate_OnGetLocalizedCat
 	Template.RegisterInStrategy = true;
 
 	Template.AddCHEvent('GetLocalizedCategory', OnGetLocalizedCategory, ELD_Immediate);
-	`LOG("Register Event OnGetLocalizedCategory",, 'TacUI');
+	//`LOG("Register Event OnGetLocalizedCategory",, 'TacUI');
 
 	return Template;
 }

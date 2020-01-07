@@ -163,7 +163,7 @@ simulated function ChangeActiveList(UIList kActiveList, optional bool bSkipAnima
 		SortPanel.Show();
 	}
 
-	`LOG(default.class @ GetFuncName() @ `ShowVar(bEquppedList) @ PawnLocationTag,, 'TacUI');
+	//`LOG(default.class @ GetFuncName() @ `ShowVar(bEquppedList) @ PawnLocationTag,, 'TacUI');
 
 	super.ChangeActiveList(kActiveList, bSkipAnimation);
 }
@@ -225,7 +225,7 @@ simulated function OnCancel()
 {
 	if(ActiveList == EquippedList)
 	{
-		`LOG(default.class @ GetFuncName() @ "EquppedList" @ PawnLocationTag,, 'TacUI');
+		//`LOG(default.class @ GetFuncName() @ "EquppedList" @ PawnLocationTag,, 'TacUI');
 
 		ReleaseAllPawns();
 		CreateSoldierPawn();
@@ -239,7 +239,7 @@ simulated function ReleaseAllPawns()
 	local UIArmory_Loadout_TacUI ArmoryScreen;
 	local UIScreenStack ScreenStack;
 
-	`LOG(default.class @ GetFuncName(),, 'TacUI');
+	//`LOG(default.class @ GetFuncName(),, 'TacUI');
 
 	ScreenStack = `SCREENSTACK;
 	for(i = ScreenStack.Screens.Length - 1; i >= 0; --i)
@@ -304,7 +304,7 @@ simulated function CreateItemPawn(XComGameState_Item Item, optional Rotator Desi
 		ActorPawn.SetHidden(false);
 	}
 
-//	`LOG(default.class @ GetFuncName() @ ActorPawn @ PawnLocationTag,, 'TacUI');
+//	//`LOG(default.class @ GetFuncName() @ ActorPawn @ PawnLocationTag,, 'TacUI');
 }
 
 simulated function OnItemClicked(UIList ContainerList, int ItemIndex)
@@ -446,7 +446,7 @@ simulated function XComGameState_Item TooltipRequestItemFromPath(string currentP
 	}
 	
 	//Else we never found a target list + item
-	`log("Problem in UIArmory_Loadout for the UITooltip_InventoryInfo: couldn't match the active list at position -4 in this path: " $currentPath,,'uixcom');
+	//`LOG("Problem in UIArmory_Loadout for the UITooltip_InventoryInfo: couldn't match the active list at position -4 in this path: " $currentPath,,'uixcom');
 	return none;
 }
 
@@ -472,7 +472,7 @@ simulated function UpdateNavHelp()
 
 simulated function OnResetFilter()
 {
-	`LOG(default.class @ GetFuncName(),, 'TacUI');
+	//`LOG(default.class @ GetFuncName(),, 'TacUI');
 	class'XComGameState_LoadoutFilter'.static.ResetFilter(CategoryFilter, UnitReference.ObjectID, SelectedSlot);
 	class'XComGameState_LoadoutFilter'.static.ResetFilter(WeaponTechFilter, UnitReference.ObjectID, SelectedSlot);
 	class'XComGameState_LoadoutFilter'.static.ResetFilter(SortFilter, UnitReference.ObjectID, SelectedSlot);
@@ -676,7 +676,7 @@ function LoadInventory()
 	local array<StateObjectReference> Inventory;
 	local array<String> LocalizedCategories, LocalizedTechs;
 
-	`LOG(default.class @ GetFuncName() @ "Start",, 'TacUI');
+	//`LOG(default.class @ GetFuncName() @ "Start",, 'TacUI');
 
 	LockerList.SetWidth(LockerListWidth);
 	
@@ -691,7 +691,7 @@ function LoadInventory()
 	ActiveItemCategories.Length = 0;
 	ActiveWeaponTechs.Length = 0;
 
-	`LOG(default.class @ GetFuncName() @ "Gather Data Start",, 'TacUI');
+	//`LOG(default.class @ GetFuncName() @ "Gather Data Start",, 'TacUI');
 
 	foreach Inventory(ItemRef)
 	{
@@ -735,7 +735,7 @@ function LoadInventory()
 
 	if (bLoadFilters)
 	{
-		`LOG(default.class @ GetFuncName() @ "LoadFilters",, 'TacUI');
+		//`LOG(default.class @ GetFuncName() @ "LoadFilters",, 'TacUI');
 		ItemCategoryFilterPanel.PopulateFilters(ActiveItemCategories, SelectedSlot, LocalizedCategories);
 		SortPanel.PopulateFilters(SortByCategories, SelectedSlot, SortByCategoriesLocalized);
 
@@ -801,7 +801,7 @@ state LoadLockerList
 {
 
 Begin:
-	`LOG(default.class @ GetFuncName() @ "Start",, 'TacUI');
+	//`LOG(default.class @ GetFuncName() @ "Start",, 'TacUI');
 	bAbortLoading = false;
 	ListItemIndex = 0;
 	ItemCreatedIndex = 0;
@@ -812,7 +812,7 @@ Begin:
 	LoadInventory();
 	//LockerList.SelectedIndex = 0;
 
-	`LOG(default.class @ GetFuncName() @ "Creating UI",, 'TacUI');
+	//`LOG(default.class @ GetFuncName() @ "Creating UI",, 'TacUI');
 	while(ListItemIndex < LockerItems.Length && !bAbortLoading)
 	{
 		if (CreateListItem(ListItemIndex))
@@ -833,7 +833,7 @@ Begin:
 	//LockerList.RealizeItems();
 	//LockerList.RealizeList();
 	
-	`LOG(default.class @ GetFuncName() @ "End",, 'TacUI');
+	//`LOG(default.class @ GetFuncName() @ "End",, 'TacUI');
 }
 
 defaultproperties

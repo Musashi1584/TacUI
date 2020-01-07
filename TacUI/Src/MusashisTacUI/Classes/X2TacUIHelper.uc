@@ -93,7 +93,7 @@ static public function string GetLocalizedTech(name Key)
 			break;
 	}
 
-	`LOG(default.class @ GetFuncName() @ "Could not find localization for" @ Key,, 'TacUI');
+	//`LOG(default.class @ GetFuncName() @ "Could not find localization for" @ Key,, 'TacUI');
 
 	return CapFirstChar(Key);
 }
@@ -233,7 +233,7 @@ static public function string GetLocalizedCategory(X2ItemTemplate Template)
 	{
 		//Category = StripTags(Template.AbilityDescName);
 		Category = CapFirstChar(StripTags(GetItemCategory(Template)));
-		`LOG(default.class @ GetFuncName() @ "Could not find localization for" @ GetItemCategory(Template),, 'TacUI');
+		//`LOG(default.class @ GetFuncName() @ "Could not find localization for" @ GetItemCategory(Template),, 'TacUI');
 	}
 
 

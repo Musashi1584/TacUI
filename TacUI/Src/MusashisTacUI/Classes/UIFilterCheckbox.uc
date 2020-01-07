@@ -36,13 +36,13 @@ public static function UIFilterCheckbox CreateCheckbox(
 
 simulated function OnCheckboxChanged(UICheckbox CheckboxControl)
 {
-	`LOG(default.class @ GetFuncName() @ `ShowVar(self.Desc.text) @ `ShowVar(CheckboxControl.bChecked) @ `ShowVar(self.OnCheckedChangedHandler),, 'TacUI');
+	//`LOG(default.class @ GetFuncName() @ `ShowVar(self.Desc.text) @ `ShowVar(CheckboxControl.bChecked) @ `ShowVar(self.OnCheckedChangedHandler),, 'TacUI');
 
 	OnCheckedChangedHandler.Dispatch(self);
 }
 
 simulated function OnClick()
 {
-	`LOG(default.class @ GetFuncName(),, 'TacUI');
+	//`LOG(default.class @ GetFuncName(),, 'TacUI');
 	Checkbox.SetChecked(!Checkbox.bChecked, true);
 }
