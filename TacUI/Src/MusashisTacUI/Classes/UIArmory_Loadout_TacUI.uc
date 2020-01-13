@@ -157,7 +157,7 @@ simulated function ChangeActiveList(UIList kActiveList, optional bool bSkipAnima
 	}
 	else
 	{
-		ReleaseAllPawns();
+		ReleasePawn();
 		ItemCategoryFilterPanel.Show();
 		WeaponTechFilterPanel.Show();
 		SortPanel.Show();
@@ -226,11 +226,18 @@ simulated function OnCancel()
 	if(ActiveList == EquippedList)
 	{
 		//`LOG(default.class @ GetFuncName() @ "EquppedList" @ PawnLocationTag,, 'TacUI');
-
+	
 		ReleaseAllPawns();
 		CreateSoldierPawn();
 	}
 	super.OnCancel(); // exits screen
+}
+
+simulated function CreateSoldierPawn(optional Rotator DesiredRotation)
+{
+	super.CreateSoldierPawn(DesiredRotation);
+	// Set desired rotation for mousegard to prevent leaking weapon rotation to pawn.
+	UIMouseGuard_RotatePawn(`SCREENSTACK.GetFirstInstanceOf(class'UIMouseGuard_RotatePawn')).SetActorPawn(ActorPawn, DesiredRotation);
 }
 
 simulated function ReleaseAllPawns()
@@ -302,6 +309,8 @@ simulated function CreateItemPawn(XComGameState_Item Item, optional Rotator Desi
 			ActorPawn.SetDrawScale(0.4);
 		}
 		ActorPawn.SetHidden(false);
+
+		UIMouseGuard_RotatePawn(`SCREENSTACK.GetFirstInstanceOf(class'UIMouseGuard_RotatePawn')).SetActorPawn(ActorPawn, ActorPawn.Rotation);
 	}
 
 //	//`LOG(default.class @ GetFuncName() @ ActorPawn @ PawnLocationTag,, 'TacUI');
@@ -352,10 +361,6 @@ simulated function UpdateDataTacUI(
 	optional bool bUpdateLockerList = true,
 	optional bool bUpdateEquippedList = true)
 {
-	local Rotator CachedSoldierRotation;
-
-	CachedSoldierRotation = ActorPawn.Rotation;
-
 	// Release soldier pawn to force it to be re-created when armor changes
 	if(bRefreshPawn)
 		ReleaseAllPawns();
@@ -369,7 +374,7 @@ simulated function UpdateDataTacUI(
 		UpdateEquippedList();
 	}
 	
-	CreateSoldierPawn(CachedSoldierRotation);
+	CreateSoldierPawn();
 
 	Header.PopulateData(GetUnit());
 
@@ -382,7 +387,7 @@ simulated function UpdateDataTacUI(
 simulated function RequestPawn(optional Rotator DesiredRotation)
 {
 	PawnLocationTag = 'UIPawnLocation_Armory';
-	super.RequestPawn();
+	super.RequestPawn(DesiredRotation);
 }
 
 simulated function ReleasePawn(optional bool bForce)
@@ -803,6 +808,7 @@ state LoadLockerList
 Begin:
 	//`LOG(default.class @ GetFuncName() @ "Start",, 'TacUI');
 	bAbortLoading = false;
+	LockerList.ClearItems();
 	ListItemIndex = 0;
 	ItemCreatedIndex = 0;
 	SelectedSlot = GetSelectedSlot();
