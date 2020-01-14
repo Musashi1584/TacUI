@@ -20,6 +20,7 @@ var private int ListItemIndex, ItemCreatedIndex;
 var private TacUIFilters WeaponTechFilterState, CategoryFilterState, SortState;
 var array<name> SortByCategories;
 var array<string> SortByCategoriesLocalized;
+var rotator DefaultPawnRotation;
 
 delegate int SortLockerItemsDelegate(TUILockerItemTacUI A, TUILockerItemTacUI B);
 
@@ -84,6 +85,10 @@ simulated function PopulateData()
 {
 	local name SortKey;
 	CreateSoldierPawn();
+
+	
+	DefaultPawnRotation = ActorPawn.Rotation;
+
 	UpdateEquippedList();
 	ChangeActiveList(EquippedList, true);
 
@@ -235,15 +240,16 @@ simulated function OnCancel()
 
 simulated function CreateSoldierPawn(optional Rotator DesiredRotation)
 {
+	PawnLocationTag = 'UIPawnLocation_Armory';
 	super.CreateSoldierPawn(DesiredRotation);
 	// Set desired rotation for mousegard to prevent leaking weapon rotation to pawn.
-	UIMouseGuard_RotatePawn(`SCREENSTACK.GetFirstInstanceOf(class'UIMouseGuard_RotatePawn')).SetActorPawn(ActorPawn, DesiredRotation);
+	UIMouseGuard_RotatePawn(`SCREENSTACK.GetFirstInstanceOf(class'UIMouseGuard_RotatePawn')).SetActorPawn(ActorPawn, DefaultPawnRotation);
 }
 
 simulated function ReleaseAllPawns()
 {
 	local int i;
-	local UIArmory_Loadout_TacUI ArmoryScreen;
+	local UIArmory_Loadout ArmoryScreen;
 	local UIScreenStack ScreenStack;
 
 	//`LOG(default.class @ GetFuncName(),, 'TacUI');
@@ -251,7 +257,7 @@ simulated function ReleaseAllPawns()
 	ScreenStack = `SCREENSTACK;
 	for(i = ScreenStack.Screens.Length - 1; i >= 0; --i)
 	{
-		ArmoryScreen = UIArmory_Loadout_TacUI(ScreenStack.Screens[i]);
+		ArmoryScreen = UIArmory_Loadout(ScreenStack.Screens[i]);
 		if(ArmoryScreen != none)
 		{
 			ArmoryScreen.ReleasePawn(true);
@@ -320,7 +326,7 @@ simulated function OnItemClicked(UIList ContainerList, int ItemIndex)
 {
 	if(ContainerList != ActiveList) return;
 
-	if(UIArmory_LoadoutItem(ContainerList.GetItem(ItemIndex)).IsDisabled)
+	if(UIArmory_LoadoutItem(ContainerList.GetItem(ItemIndex)) != none && UIArmory_LoadoutItem(ContainerList.GetItem(ItemIndex)).IsDisabled)
 	{
 		Movie.Pres.PlayUISound(eSUISound_MenuClickNegative);
 		return;
@@ -337,7 +343,7 @@ simulated function OnItemClicked(UIList ContainerList, int ItemIndex)
 	{
 		ChangeActiveList(EquippedList);
 
-		if(EquipItemOveride(UIArmory_LoadoutItem_TacUI(LockerList.GetSelectedItem())))
+		if(UIArmory_LoadoutItem_TacUI(LockerList.GetSelectedItem()) != none && EquipItem(UIArmory_LoadoutItem(LockerList.GetSelectedItem())))
 		{
 			// Release soldier pawn to force it to be re-created when armor changes
 			
@@ -397,22 +403,21 @@ simulated function ReleasePawn(optional bool bForce)
 	ActorPawn = none;
 }
 
-simulated function bool EquipItemOveride(UIArmory_LoadoutItem_TacUI Item)
-{
-	local UIArmory_LoadoutItem ItemDummy;
-	local bool bResult;
-
-	ItemDummy = Spawn(class'UIArmory_LoadoutItem', self);
-	ItemDummy.Hide();
-
-	ItemDummy.ItemRef = Item.ItemRef;
-	ItemDummy.ItemTemplate = Item.ItemTemplate;
-
-	bResult =  EquipItem(ItemDummy);
-	RemoveChild(ItemDummy);
-	return bResult;
-}
-
+//simulated function bool EquipItemOveride(UIArmory_LoadoutItem_TacUI Item)
+//{
+//	local UIArmory_LoadoutItem ItemDummy;
+//	local bool bResult;
+//
+//	ItemDummy = Spawn(class'UIArmory_LoadoutItem', self);
+//	ItemDummy.Hide();
+//
+//	ItemDummy.ItemRef = Item.ItemRef;
+//	ItemDummy.ItemTemplate = Item.ItemTemplate;
+//
+//	bResult =  EquipItem(ItemDummy);
+//	RemoveChild(ItemDummy);
+//	return bResult;
+//}
 
 simulated function XComGameState_Item TooltipRequestItemFromPath(string currentPath)
 {
@@ -792,7 +797,7 @@ function bool CreateListItem(int Index)
 	}
 
 	LoadoutItem = UIArmory_LoadoutItem_TacUI(LockerList.CreateItem(class'UIArmory_LoadoutItem_TacUI'));
-	LoadoutItem.InitLoadoutItem
+	LoadoutItem.InitLoadoutItemTacUI
 	(
 		LockerItem.Item,
 		SelectedSlot,

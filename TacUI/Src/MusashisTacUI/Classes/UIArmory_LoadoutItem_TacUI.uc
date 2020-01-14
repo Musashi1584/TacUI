@@ -3,22 +3,13 @@
 //	Author: Musashi
 //	Based on Robojumpers Squadselect robojumper_UISquadSelect_EquipItem
 //-----------------------------------------------------------
-class UIArmory_LoadoutItem_TacUI extends UIPanel;
+class UIArmory_LoadoutItem_TacUI extends UIArmory_LoadoutItem;
 
 const EquipmentTextX = 10;
 const EquipmentTextY = 0;
 const CategoryTextX = 10;
 const CategoryTextY = 32;
 
-var bool IsLocked;
-var bool IsInfinite;
-var bool IsDisabled;
-
-var bool bCanBeCleared;
-var EInventorySlot EquipmentSlot; // only relevant if this item represents an equipment slot
-var StateObjectReference ItemRef;
-var X2ItemTemplate ItemTemplate;
-var bool bLoadoutSlot;
 var int ItemCount;
 
 var UIList List;
@@ -38,7 +29,6 @@ var array<string> WeaponUpgradeDescs;
 
 var string strItemText, strItemCategory;
 var bool bDisabled;
-
 
 // Override InitPanel to run important listItem specific logic
 simulated function UIPanel InitPanel(optional name InitName, optional name InitLibID)
@@ -105,6 +95,8 @@ simulated function UIPanel InitPanel(optional name InitName, optional name InitL
 	CategoryText.SetPosition(CategoryTextX, CategoryTextY);
 	CategoryText.SetPanelScale(0.7);
 	ShadowToTextField(CategoryText, 2, 10, 1);
+
+	Show();
 
 	return self;
 }
@@ -181,7 +173,7 @@ simulated function SpawnUpgradeIcons(int num)
 	}
 }
 
-simulated function UIArmory_LoadoutItem_TacUI InitLoadoutItem(
+simulated function UIArmory_LoadoutItem_TacUI InitLoadoutItemTacUI(
 	XComGameState_Item Item,
 	EInventorySlot InitEquipmentSlot,
 	optional int DefaultWidth = -1
@@ -227,7 +219,7 @@ simulated function UIArmory_LoadoutItem_TacUI InitLoadoutItem(
 }
 
 // one icon per upgrade!
-simulated function GetUpgradeInfo(XComGameState_Item Item, EInventorySlot inEquipmentSlot, out array<string> Images, out array<string> Names, out array<string> Descs)
+simulated function GetUpgradeInfo(XComGameState_Item Item, EInventorySlot inEquipmentSlot, out array<string> ImagesIn, out array<string> Names, out array<string> Descs)
 {
 	local int i, j, totalslots, filledimages;
 	local array<X2WeaponUpgradeTemplate> Upgrades;
@@ -262,7 +254,7 @@ simulated function GetUpgradeInfo(XComGameState_Item Item, EInventorySlot inEqui
 			// we don't have an upgrade there, show empty
 			strBest = class'UIUtilities_Image'.const.PersonalCombatSim_Empty;
 		}
-		Images.AddItem(strBest);
+		ImagesIn.AddItem(strBest);
 		Names.AddItem(Upgrades[i].GetItemFriendlyName());
 		Descs.AddItem(Item.GetUpgradeEffectForUI(Upgrades[i]));
 		
@@ -299,9 +291,16 @@ simulated function GetUpgradeInfo(XComGameState_Item Item, EInventorySlot inEqui
 	}
 }
 
-simulated function PopulateData()
+simulated function PopulateData(optional XComGameState_Item Item)
 {
 	local int i;
+
+	if (Item != none)
+	{
+		ItemRef = Item.GetReference();
+		ItemTemplate = Item.GetMyTemplate();
+	}
+
 	UpdateTexts();
 	if (!bDisabled)
 	{
@@ -354,13 +353,13 @@ function UpdateTexts()
 
 simulated function OnReceiveFocus()
 {
-	super.OnReceiveFocus();
+	super(UIPanel).OnReceiveFocus();
 	UpdateTexts();
 }
 
 simulated function OnLoseFocus()
 {
-	super.OnLoseFocus();
+	super(UIPanel).OnLoseFocus();
 	UpdateTexts();
 }
 
@@ -463,4 +462,5 @@ defaultproperties
 	height=65
 	bAnimateOnInit=false
 	bCascadeFocus = false
+	LibID = "EmptyControl"
 }
