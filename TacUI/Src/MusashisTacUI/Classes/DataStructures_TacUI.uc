@@ -29,3 +29,11 @@ struct TacUIFilters
 		UnitStateObjectID = -1;
 	}
 };
+
+struct ProfileTime
+{
+	var name ProfileName;
+	var float StartTime;
+	var float EndTime;
+	var float ElapsedTime;
+};

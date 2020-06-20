@@ -33,7 +33,8 @@ simulated static function UIArmory_LoadoutFilterPanel CreateLoadoutFilterPanel(
 simulated function PopulateFilters(
 	array<name> FilterNames,
 	EInventorySlot InventorySlotIn,
-	optional array<string> FilterLabels
+	optional array<string> FilterLabels,
+	optional bool bDefaultToFirst = false
 )
 {
 	local XComGameState_LoadoutFilter LoadoutFilterGameState;
@@ -48,10 +49,14 @@ simulated function PopulateFilters(
 	UnitStateObjectID = GetUnitObjectIDFromArmory();
 	LoadoutFilterGameState = class'XComGameState_LoadoutFilter'.static.GetLoadoutFilterGameState();
 
+	`LOG(default.class @ GetFuncName() @ `ShowVar(UnitStateObjectID) @ `ShowVar(LoadoutFilterGameState.ObjectID),, 'TacUI');
+
 	if (LoadoutFilterGameState != none && UnitStateObjectID > 0)
 	{
 		FilterState = LoadoutFilterGameState.GetFilter(FilterCategory, UnitStateObjectID, InventorySlot);
+		`LOG(default.class @ GetFuncName() @ `ShowVar(FilterState.FilterNames.Length),, 'TacUI');
 	}
+
 
 	//RemoveUnusedFilters(FilterNames);
 	ResetFilters();
@@ -59,6 +64,13 @@ simulated function PopulateFilters(
 	{
 		Filter = GetFilter(FilterName);
 		bChecked = FilterState.FilterNames.Find(FilterName) != INDEX_NONE;
+
+		// If nothing is selected yet use first option
+		if (bDefaultToFirst && Index == 0 &&
+			FilterState.FilterNames.Length == 0)
+		{
+			bChecked = true;
+		}
 
 		if (Filter == none)
 		{
@@ -84,6 +96,8 @@ simulated function PopulateFilters(
 	{
 		Show();
 	}
+
+	`LOG(default.class @ GetFuncName() @ "End",, 'TacUI');
 }
 
 

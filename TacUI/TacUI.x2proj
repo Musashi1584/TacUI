@@ -23,6 +23,9 @@
     <Content Include="Config\XComGameData.ini">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Localization\MusashisTacUI.chn">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="ReadMe.txt" />
     <Content Include="ModPreview.jpg" />
     <Content Include="Config\XComEditor.ini" />
@@ -30,6 +33,9 @@
     <Content Include="Config\XComGame.ini" />
     <Content Include="Localization\MusashisTacUI.int" />
     <Content Include="Src\MusashisTacUI\Classes\DataStructures_TacUI.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\MusashisTacUI\Classes\Helper.uc">
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\MusashisTacUI\Classes\UIArmory_LoadoutItem_TacUI.uc">

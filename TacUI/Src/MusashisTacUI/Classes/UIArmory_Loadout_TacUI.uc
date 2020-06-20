@@ -26,7 +26,9 @@ delegate int SortLockerItemsDelegate(TUILockerItemTacUI A, TUILockerItemTacUI B)
 
 simulated function InitArmory(StateObjectReference UnitRef, optional name DispEvent, optional name SoldSpawnEvent, optional name NavBackEvent, optional name HideEvent, optional name RemoveEvent, optional bool bInstant = false, optional XComGameState InitCheckGameState)
 {
-	Movie.PreventCacheRecycling();
+	class'Helper'.static.StartProfiling(GetFuncName());
+
+	//Movie.PreventCacheRecycling();
 
 	super(UIArmory).InitArmory(UnitRef, DispEvent, SoldSpawnEvent, NavBackEvent, HideEvent, RemoveEvent, bInstant, InitCheckGameState);
 
@@ -78,12 +80,17 @@ simulated function InitArmory(StateObjectReference UnitRef, optional name DispEv
 		0,
 		true
 	);
+
+	`LOG(default.class @ GetFuncName() @ class'Helper'.static.EndProfiling(GetFuncName()) $ "s",, 'TacUI');
 	//SortPanel = CreateFilterPanel("SORT BY", SortFilter, LockerListWidth + 5, 0 , true);
 }
 
 simulated function PopulateData()
 {
 	local name SortKey;
+
+	class'Helper'.static.StartProfiling(GetFuncName());
+
 	CreateSoldierPawn();
 
 	
@@ -101,13 +108,15 @@ simulated function PopulateData()
 	{
 		SortByCategoriesLocalized.AddItem(class'X2TacUIHelper'.static.GetLocalizedSort(SortKey));
 	}
-		
+	`LOG(default.class @ GetFuncName() @ class'Helper'.static.EndProfiling(GetFuncName()) $ "s",, 'TacUI');
 }
 
 simulated static function UIList CreateLockerList(UIPanel Container)
 {
 	local UIBGBox BG;
 	local UIList ReturnList;
+
+	class'Helper'.static.StartProfiling(GetFuncName());
 
 	BG = Container.Spawn(class'UIBGBox', Container);
 	BG.InitBG('BG');
@@ -122,6 +131,8 @@ simulated static function UIList CreateLockerList(UIPanel Container)
 
 	// this allows us to send mouse scroll events to the list
 	BG.ProcessMouseEvents(ReturnList.OnChildMouseEvent);
+
+	`LOG(default.class @ GetFuncName() @ class'Helper'.static.EndProfiling(GetFuncName()) $ "s",, 'TacUI');
 	return ReturnList;
 }
 
@@ -134,6 +145,9 @@ simulated function UIArmory_LoadoutFilterPanel CreateFilterPanel(
 )
 {
 	local UIArmory_LoadoutFilterPanel This;
+
+	class'Helper'.static.StartProfiling(GetFuncName());
+
 	This = class'UIArmory_LoadoutFilterPanel'.static.CreateLoadoutFilterPanel(
 		LockerListContainer,
 		FilterTitle,
@@ -142,12 +156,17 @@ simulated function UIArmory_LoadoutFilterPanel CreateFilterPanel(
 	);
 	This.SetPosition(PanelX, PanelY);
 	This.Hide();
+
+	`LOG(default.class @ GetFuncName() @ class'Helper'.static.EndProfiling(GetFuncName()) $ "s",, 'TacUI');
+
 	return This;
 }
 
 simulated function ChangeActiveList(UIList kActiveList, optional bool bSkipAnimation)
 {
 	local bool bEquppedList;
+
+	class'Helper'.static.StartProfiling(GetFuncName());
 	
 	bEquppedList = kActiveList == EquippedList;
 
@@ -168,7 +187,8 @@ simulated function ChangeActiveList(UIList kActiveList, optional bool bSkipAnima
 		SortPanel.Show();
 	}
 
-	//`LOG(default.class @ GetFuncName() @ `ShowVar(bEquppedList) @ PawnLocationTag,, 'TacUI');
+	`LOG(default.class @ GetFuncName() @ `ShowVar(bEquppedList) @ PawnLocationTag,, 'TacUI');
+	`LOG(default.class @ GetFuncName() @ class'Helper'.static.EndProfiling(GetFuncName()) $ "s",, 'TacUI');
 
 	super.ChangeActiveList(kActiveList, bSkipAnimation);
 }
@@ -240,10 +260,14 @@ simulated function OnCancel()
 
 simulated function CreateSoldierPawn(optional Rotator DesiredRotation)
 {
+	class'Helper'.static.StartProfiling(GetFuncName());
+
 	PawnLocationTag = 'UIPawnLocation_Armory';
 	super.CreateSoldierPawn(DesiredRotation);
 	// Set desired rotation for mousegard to prevent leaking weapon rotation to pawn.
 	UIMouseGuard_RotatePawn(`SCREENSTACK.GetFirstInstanceOf(class'UIMouseGuard_RotatePawn')).SetActorPawn(ActorPawn, DefaultPawnRotation);
+
+	`LOG(default.class @ GetFuncName() @ class'Helper'.static.EndProfiling(GetFuncName()) $ "s",, 'TacUI');
 }
 
 simulated function ReleaseAllPawns()
@@ -252,7 +276,7 @@ simulated function ReleaseAllPawns()
 	local UIArmory_Loadout ArmoryScreen;
 	local UIScreenStack ScreenStack;
 
-	//`LOG(default.class @ GetFuncName(),, 'TacUI');
+	class'Helper'.static.StartProfiling(GetFuncName());
 
 	ScreenStack = `SCREENSTACK;
 	for(i = ScreenStack.Screens.Length - 1; i >= 0; --i)
@@ -263,6 +287,8 @@ simulated function ReleaseAllPawns()
 			ArmoryScreen.ReleasePawn(true);
 		}
 	}
+
+	`LOG(default.class @ GetFuncName() @ class'Helper'.static.EndProfiling(GetFuncName()) $ "s",, 'TacUI');
 }
 
 
@@ -270,6 +296,8 @@ simulated function CreateItemPawn(XComGameState_Item Item, optional Rotator Desi
 {
 	local Rotator NoneRotation;
 	local XGWeapon WeaponVisualizer;
+
+	class'Helper'.static.StartProfiling(GetFuncName());
 	
 	// Make sure to clean up Item actors left over from previous Armory screens.
 	if(ActorPawn == none)
@@ -319,11 +347,13 @@ simulated function CreateItemPawn(XComGameState_Item Item, optional Rotator Desi
 		UIMouseGuard_RotatePawn(`SCREENSTACK.GetFirstInstanceOf(class'UIMouseGuard_RotatePawn')).SetActorPawn(ActorPawn, ActorPawn.Rotation);
 	}
 
-//	//`LOG(default.class @ GetFuncName() @ ActorPawn @ PawnLocationTag,, 'TacUI');
+	`LOG(default.class @ GetFuncName() @ class'Helper'.static.EndProfiling(GetFuncName()) $ "s",, 'TacUI');
 }
 
 simulated function OnItemClicked(UIList ContainerList, int ItemIndex)
 {
+	`LOG(default.class @ GetFuncName() @ `ShowVar(ContainerList),, 'TacUI');
+
 	if(ContainerList != ActiveList) return;
 
 	if(UIArmory_LoadoutItem(ContainerList.GetItem(ItemIndex)) != none && UIArmory_LoadoutItem(ContainerList.GetItem(ItemIndex)).IsDisabled)
@@ -346,6 +376,7 @@ simulated function OnItemClicked(UIList ContainerList, int ItemIndex)
 		if(UIArmory_LoadoutItem_TacUI(LockerList.GetSelectedItem()) != none && EquipItem(UIArmory_LoadoutItem(LockerList.GetSelectedItem())))
 		{
 			// Release soldier pawn to force it to be re-created when armor changes
+			`LOG(default.class @ GetFuncName() @ "EquippedItem",, 'TacUI');
 			
 			UpdateDataTacUI(true, false);
 			
@@ -367,6 +398,7 @@ simulated function UpdateDataTacUI(
 	optional bool bUpdateLockerList = true,
 	optional bool bUpdateEquippedList = true)
 {
+	class'Helper'.static.StartProfiling(GetFuncName());
 	// Release soldier pawn to force it to be re-created when armor changes
 	if(bRefreshPawn)
 		ReleaseAllPawns();
@@ -388,19 +420,24 @@ simulated function UpdateDataTacUI(
 	{
 		`GAME.GetGeoscape().m_kBase.m_kCrewMgr.TakeCrewPhotobgraph(GetUnit().GetReference(), true);
 	}
+	`LOG(default.class @ GetFuncName() @ class'Helper'.static.EndProfiling(GetFuncName()) $ "s",, 'TacUI');
 }
 
 simulated function RequestPawn(optional Rotator DesiredRotation)
 {
+	class'Helper'.static.StartProfiling(GetFuncName());
 	PawnLocationTag = 'UIPawnLocation_Armory';
 	super.RequestPawn(DesiredRotation);
+	`LOG(default.class @ GetFuncName() @ class'Helper'.static.EndProfiling(GetFuncName()) $ "s",, 'TacUI');
 }
 
 simulated function ReleasePawn(optional bool bForce)
 {
+	class'Helper'.static.StartProfiling(GetFuncName());
 	ActorPawn.SetHidden(true);
 	Movie.Pres.GetUIPawnMgr().ReleasePawn(self, UnitReference.ObjectID, bForce);
 	ActorPawn = none;
+	`LOG(default.class @ GetFuncName() @ class'Helper'.static.EndProfiling(GetFuncName()) $ "s",, 'TacUI');
 }
 
 //simulated function bool EquipItemOveride(UIArmory_LoadoutItem_TacUI Item)
@@ -662,6 +699,7 @@ private function int Partition(
 
 simulated function UpdateLockerList()
 {
+	`LOG(default.class @ GetFuncName(),, 'TacUI');
 	GotoState('LoadLockerList');
 }
 
@@ -687,6 +725,7 @@ function LoadInventory()
 	local array<String> LocalizedCategories, LocalizedTechs;
 
 	//`LOG(default.class @ GetFuncName() @ "Start",, 'TacUI');
+	class'Helper'.static.StartProfiling(GetFuncName());
 
 	LockerList.SetWidth(LockerListWidth);
 	
@@ -701,7 +740,7 @@ function LoadInventory()
 	ActiveItemCategories.Length = 0;
 	ActiveWeaponTechs.Length = 0;
 
-	//`LOG(default.class @ GetFuncName() @ "Gather Data Start",, 'TacUI');
+	`LOG(default.class @ GetFuncName() @ "Gather Data Start",, 'TacUI');
 
 	foreach Inventory(ItemRef)
 	{
@@ -745,13 +784,19 @@ function LoadInventory()
 
 	if (bLoadFilters)
 	{
-		//`LOG(default.class @ GetFuncName() @ "LoadFilters",, 'TacUI');
-		ItemCategoryFilterPanel.PopulateFilters(ActiveItemCategories, SelectedSlot, LocalizedCategories);
+		class'Helper'.static.StartProfiling('LoadFilter');
+		`LOG(default.class @ GetFuncName() @ "Load Filters Start",, 'TacUI');
+		ItemCategoryFilterPanel.PopulateFilters(ActiveItemCategories, SelectedSlot, LocalizedCategories, DefaultToFirstFilter());
 		SortPanel.PopulateFilters(SortByCategories, SelectedSlot, SortByCategoriesLocalized);
-
 		WeaponTechFilterPanel.PopulateFilters(ActiveWeaponTechs, SelectedSlot, LocalizedTechs);
+
+		`LOG(default.class @ GetFuncName() @ "Load Filters End in" @ class'Helper'.static.EndProfiling('LoadFilter')$ "s",, 'TacUI');
+		
 		WeaponTechFilterPanel.SetY(ItemCategoryFilterPanel.List.GetTotalHeight() + ItemCategoryFilterPanel.BGPaddingTop + 20);
 	}
+
+	class'Helper'.static.StartProfiling('ItemSorting');
+	`LOG(default.class @ GetFuncName() @ "Start Sorting",, 'TacUI');
 
 	if (SortState.FilterNames.Length == 0 || SortState.FilterNames.Find('Default') != INDEX_NONE)
 	{
@@ -775,13 +820,23 @@ function LoadInventory()
 			QuickSortLockerItem(LockerItems, 0, LockerItems.Length - 1, SortLockerListByTierTacUI);
 		}
 	}
+	`LOG(default.class @ GetFuncName() @ "End Sorting in" @ class'Helper'.static.EndProfiling('ItemSorting')$ "s",, 'TacUI');
+
+	`LOG(default.class @ GetFuncName() @ "Gather Data End in" @ class'Helper'.static.EndProfiling('LoadFilter')$ "s",, 'TacUI');
+}
+
+function bool DefaultToFirstFilter()
+{
+	return SelectedSlot == eInvSlot_PrimaryWeapon;
 }
 
 function bool CreateListItem(int Index)
 {
 	local TUILockerItemTacUI LockerItem;
 	local UIArmory_LoadoutItem_TacUI LoadoutItem;
-		
+	
+	class'Helper'.static.StartProfiling(GetFuncName());
+
 	LockerItem = LockerItems[Index];
 
 	if (CategoryFilterState.FilterNames.Length > 0 &&
@@ -804,6 +859,8 @@ function bool CreateListItem(int Index)
 		LockerListWidth
 	);
 
+	`LOG(default.class @ GetFuncName() @ "completed in" @ class'Helper'.static.EndProfiling(GetFuncName()) $ "s",, 'TacUI');
+
 	return true;
 }
 
@@ -811,19 +868,33 @@ state LoadLockerList
 {
 
 Begin:
-	//`LOG(default.class @ GetFuncName() @ "Start",, 'TacUI');
+	class'Helper'.static.StartProfiling(GetFuncName());
+	`LOG(default.class @ GetFuncName() @ "START LoadLockerList",, 'TacUI');
 	bAbortLoading = false;
 	LockerList.ClearItems();
 	ListItemIndex = 0;
 	ItemCreatedIndex = 0;
 	SelectedSlot = GetSelectedSlot();
+	`LOG(default.class @ GetFuncName() @ "SelectedSlot" @ SelectedSlot,, 'TacUI');
+
 	CategoryFilterState = GetFilterState(CategoryFilter);
 	WeaponTechFilterState = GetFilterState(WeaponTechFilter);
 	SortState = GetFilterState(SortFilter);
+	`LOG(default.class @ GetFuncName() @ "FilterStateLoaded",, 'TacUI');
+	
 	LoadInventory();
+
+	if (DefaultToFirstFilter() && CategoryFilterState.FilterNames.Length == 0)
+	{
+		CategoryFilterState.FilterNames.AddItem(ActiveItemCategories[0]);
+	}
+
+	
+	
 	//LockerList.SelectedIndex = 0;
 
-	//`LOG(default.class @ GetFuncName() @ "Creating UI",, 'TacUI');
+	class'Helper'.static.StartProfiling('PopulateUI');
+	`LOG(default.class @ GetFuncName() @ "Creating UI",, 'TacUI');
 	while(ListItemIndex < LockerItems.Length && !bAbortLoading)
 	{
 		if (CreateListItem(ListItemIndex))
@@ -833,7 +904,7 @@ Begin:
 
 		if (ItemCreatedIndex % 10 == 0 && ItemCreatedIndex != 0)
 		{
-			sleep(0);
+			//sleep(0);
 		}
 
 		ListItemIndex++;
@@ -841,10 +912,14 @@ Begin:
 
 	SelectItem();
 	bLoadFilters = true;
+	 `LOG(default.class @ GetFuncName() @ "PopulatedUI in" @ class'Helper'.static.EndProfiling('PopulateUI') $ "s",, 'TacUI');
+
 	//LockerList.RealizeItems();
 	//LockerList.RealizeList();
 	
-	//`LOG(default.class @ GetFuncName() @ "End",, 'TacUI');
+	`LOG(default.class @ GetFuncName() @ "END completed in" @ class'Helper'.static.EndProfiling(GetFuncName()) $ "s",, 'TacUI');
+
+	
 }
 
 defaultproperties
